@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { apiRequest, storeSession, type AuthSession } from "@/lib/api";
+import { resolvePostAuthPath } from "@/lib/auth-redirect";
 
 export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -24,7 +25,8 @@ export default function AuthPage() {
       });
 
       storeSession(session);
-      window.location.href = "/app";
+      const path = mode === "register" ? "/onboarding" : await resolvePostAuthPath();
+      window.location.href = path;
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Authentication failed");
     } finally {

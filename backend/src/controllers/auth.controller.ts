@@ -12,6 +12,7 @@ import {
   verifyRefreshToken
 } from "../services/token.service";
 import { AppError } from "../utils/errors";
+import { ensureProfileForUser } from "../services/profile.service";
 
 const SALT_ROUNDS = 12;
 const REFRESH_COOKIE_NAME = "refreshToken";
@@ -72,6 +73,8 @@ export const register = async (req: Request, res: Response) => {
     }
   });
 
+  await ensureProfileForUser(user.id, user.email, user.name);
+
   const { accessToken, refreshToken } = await issueAuthTokens(user);
   res.cookie(REFRESH_COOKIE_NAME, refreshToken, refreshCookieOptions);
 
@@ -95,6 +98,8 @@ export const login = async (req: Request, res: Response) => {
     throw new AppError(401, "Invalid email or password");
   }
 
+  await ensureProfileForUser(user.id, user.email, user.name);
+
   const { accessToken, refreshToken } = await issueAuthTokens(user);
   res.cookie(REFRESH_COOKIE_NAME, refreshToken, refreshCookieOptions);
 
@@ -111,7 +116,12 @@ export const refresh = async (req: Request, res: Response) => {
     throw new AppError(401, "Refresh token is required");
   }
 
-  verifyRefreshToken(refreshToken);
+  try {
+    verifyRefreshToken(refreshToken);
+  } catch {
+    throw new AppError(401, "Refresh token is invalid or expired");
+  }
+
   const rotation = await rotateRefreshToken(refreshToken);
 
   if (!rotation) {

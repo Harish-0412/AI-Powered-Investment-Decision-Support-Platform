@@ -19,6 +19,11 @@ const cards = [
     title: "Analytics",
     description: "Compare volatility, Sharpe ratio, SMA, EMA, RSI, and MACD outputs.",
     href: "/analytics"
+  },
+  {
+    title: "Mutual Funds",
+    description: "SIP calculator, fund lists, NFOs, and screener for mutual funds.",
+    href: "/mutual-funds"
   }
 ];
 

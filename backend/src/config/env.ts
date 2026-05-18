@@ -12,7 +12,8 @@ const envSchema = z.object({
   ALPHA_VANTAGE_API_KEY: z.string().optional(),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
-  FRONTEND_URL: z.string().url().default("http://localhost:3000")
+  FRONTEND_URL: z.string().url().default("http://localhost:3000"),
+  LOCAL_DATABASE_URL: z.string().optional()
 });
 
 export const env = envSchema.parse(process.env);

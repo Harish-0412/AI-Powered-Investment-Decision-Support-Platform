@@ -1,10 +1,12 @@
 const navItems = [
   { label: "Home", href: "#home" },
+  { label: "Portfolio", href: "/portfolio" },
   { label: "Features", href: "#features" },
   { label: "App", href: "/app" },
   { label: "Stocks", href: "/stocks" },
   { label: "Portfolios", href: "/portfolios" },
   { label: "Analytics", href: "/analytics" },
+  { label: "Mutual Funds", href: "/mutual-funds" },
 ];
 
 const features = [
@@ -109,6 +111,9 @@ export default function Home() {
             </p>
             <div className="hero-actions">
               <GlassButton href="/auth">Get Started</GlassButton>
+              <GlassButton href="/portfolio" variant="secondary">
+                Developer Portfolio
+              </GlassButton>
               <GlassButton href="/app" variant="secondary">
                 Open Dashboard
               </GlassButton>

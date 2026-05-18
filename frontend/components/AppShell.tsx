@@ -5,9 +5,11 @@ import { clearSession, getStoredSession } from "@/lib/api";
 
 const navLinks = [
   { label: "Dashboard", href: "/app" },
+  { label: "My Portfolio", href: "/portfolio/me" },
   { label: "Stocks", href: "/stocks" },
   { label: "Portfolios", href: "/portfolios" },
   { label: "Analytics", href: "/analytics" },
+  { label: "Mutual Funds", href: "/mutual-funds" },
 ];
 
 export function AppShell({ children, title, subtitle }: {

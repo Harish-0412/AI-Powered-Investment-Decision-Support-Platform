@@ -8,6 +8,7 @@ import { errorHandler, notFoundHandler } from "./middleware/error.middleware";
 import { authRouter } from "./routes/auth.routes";
 import { stockRouter } from "./routes/stock.routes";
 import { portfolioRouter } from "./routes/portfolio.routes";
+import { profileRouter } from "./routes/profile.routes";
 import { healthRouter } from "./routes/health.routes";
 
 export const app = express();
@@ -30,5 +31,6 @@ app.use("/api/v1", healthRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/stocks", stockRouter);
 app.use("/api/v1/portfolios", portfolioRouter);
+app.use("/api/v1/profile", profileRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
