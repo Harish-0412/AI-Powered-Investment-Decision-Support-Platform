@@ -1,0 +1,33 @@
+﻿# Root .gitignore for full project
+
+# node modules
+/node_modules
+/backend/node_modules
+/frontend/node_modules
+
+# environment
+.env
+.env*
+
+# backend generated
+/backend/dist
+/backend/src/generated/prisma
+
+# frontend generated
+/frontend/.next
+/frontend/out
+/frontend/build
+/frontend/.vercel
+/frontend/.pnp
+/frontend/.pnp.*
+/frontend/.yarn/*
+/frontend/*.log*
+
+# misc
+.DS_Store
+*.pem
+*.log
+
+# nested git metadata backups
+**/.git/
+**/.git.bak
