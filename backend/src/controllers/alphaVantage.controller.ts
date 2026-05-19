@@ -42,6 +42,10 @@ export const getCompanyEarnings = async (req: Request, res: Response) => {
   await sendAlphaVantageResponse(res, alphaVantageService.getCompanyEarnings(getRequiredSymbol(req)));
 };
 
+export const getDividends = async (req: Request, res: Response) => {
+  await sendAlphaVantageResponse(res, alphaVantageService.getDividends(getRequiredSymbol(req)));
+};
+
 export const getNewsSentiment = async (req: Request, res: Response) => {
   const limitQuery = Number(getQuery(req.query.limit));
   const limit = Number.isFinite(limitQuery) && limitQuery > 0 ? Math.min(limitQuery, 1000) : 50;

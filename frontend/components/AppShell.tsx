@@ -9,6 +9,9 @@ const navLinks = [
   { label: "Stocks", href: "/stocks" },
   { label: "Portfolios", href: "/portfolios" },
   { label: "Analytics", href: "/analytics" },
+  { label: "Dividend Tracker", href: "/dividend-tracker" },
+  { label: "Sentiment Hub", href: "/sentiment-hub" },
+  { label: "Market Signals", href: "/signals" },
   { label: "Mutual Funds", href: "/mutual-funds" },
 ];
 

@@ -3,57 +3,47 @@ import { z } from "zod";
 import * as profileService from "../services/profile.service";
 import { AppError } from "../utils/errors";
 
-const skillDomainsSchema = z.object({
-  frontend: z.array(z.string()).optional(),
-  backend: z.array(z.string()).optional(),
-  databases: z.array(z.string()).optional(),
-  aiMl: z.array(z.string()).optional(),
-  devops: z.array(z.string()).optional(),
+const marketSectorsSchema = z.object({
+  equity: z.array(z.string()).optional(),
+  fixedIncome: z.array(z.string()).optional(),
+  commodities: z.array(z.string()).optional(),
+  crypto: z.array(z.string()).optional(),
+  realEstate: z.array(z.string()).optional(),
 });
 
-const projectSchema = z.object({
+const pastInvestmentSchema = z.object({
   id: z.string(),
-  slug: z.string(),
   name: z.string().min(1),
-  problem: z.string(),
-  architecture: z.string(),
-  techStack: z.array(z.string()),
-  features: z.array(z.string()),
-  engineeringHighlights: z.array(z.string()),
-  githubUrl: z.string().url().optional().or(z.literal("")),
-  liveUrl: z.string().optional(),
-  imageUrl: z.string().optional(),
-  featured: z.boolean().optional(),
+  assetClass: z.string(),
+  entryPrice: z.string(),
+  exitPrice: z.string().optional(),
+  duration: z.string(),
+  keyTakeaway: z.string(),
 });
 
-const experienceSchema = z.object({
+const investmentMethodSchema = z.object({
   id: z.string(),
   title: z.string(),
-  organization: z.string(),
+  platform: z.string(),
   period: z.string(),
   description: z.string(),
-  type: z.enum(["hackathon", "opensource", "freelance", "project", "work", "research"]),
+  type: z.enum(["sip", "lumpsum", "trading", "index", "other"]),
 });
 
 const onboardingSchema = z.object({
-  step: z.number().int().min(0).max(6),
+  step: z.number().int().min(0).max(5),
   fullName: z.string().trim().min(1).max(120).optional(),
-  role: z.string().trim().max(160).optional(),
-  tagline: z.string().trim().max(280).optional(),
-  bio: z.string().trim().max(4000).optional(),
-  yearsLearning: z.number().int().min(0).max(50).optional(),
-  currentlyBuilding: z.string().trim().max(2000).optional(),
-  technologies: z.array(z.string()).optional(),
-  skills: skillDomainsSchema.optional(),
-  projects: z.array(projectSchema).optional(),
-  experience: z.array(experienceSchema).optional(),
-  githubUsername: z.string().trim().max(80).optional(),
+  investmentGoal: z.string().trim().max(160).optional(),
+  investmentPhilosophy: z.string().trim().max(280).optional(),
+  appUsageInterest: z.string().trim().max(4000).optional(),
+  investmentExperienceYears: z.number().int().min(0).max(50).optional(),
+  currentFocus: z.string().trim().max(2000).optional(),
+  stocksWatching: z.array(z.string()).optional(),
+  sectors: marketSectorsSchema.optional(),
+  pastInvestments: z.array(pastInvestmentSchema).optional(),
+  investmentMethods: z.array(investmentMethodSchema).optional(),
   contactEmail: z.string().email().optional(),
   linkedin: z.string().url().optional().or(z.literal("")),
-  twitter: z.string().url().optional().or(z.literal("")),
-  calendly: z.string().url().optional().or(z.literal("")),
-  discord: z.string().trim().max(120).optional(),
-  resumeUrl: z.string().url().optional().or(z.literal("")),
   complete: z.boolean().optional(),
 });
 

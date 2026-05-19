@@ -1,54 +1,44 @@
-export type SkillDomains = {
-  frontend?: string[];
-  backend?: string[];
-  databases?: string[];
-  aiMl?: string[];
-  devops?: string[];
+export type MarketSectors = {
+  equity?: string[];
+  fixedIncome?: string[];
+  commodities?: string[];
+  crypto?: string[];
+  realEstate?: string[];
 };
 
-export type PortfolioProject = {
+export type PastInvestment = {
   id: string;
-  slug: string;
   name: string;
-  problem: string;
-  architecture: string;
-  techStack: string[];
-  features: string[];
-  engineeringHighlights: string[];
-  githubUrl?: string;
-  liveUrl?: string;
-  imageUrl?: string;
-  featured?: boolean;
+  assetClass: string;
+  entryPrice: string;
+  exitPrice?: string;
+  duration: string;
+  keyTakeaway: string;
 };
 
-export type PortfolioExperience = {
+export type InvestmentMethod = {
   id: string;
   title: string;
-  organization: string;
+  platform: string;
   period: string;
   description: string;
-  type: "hackathon" | "opensource" | "freelance" | "project" | "work" | "research";
+  type: "sip" | "lumpsum" | "trading" | "index" | "other";
 };
 
 export type PublicProfile = {
   slug: string;
   fullName: string | null;
-  role: string | null;
-  tagline: string | null;
-  bio: string | null;
-  yearsLearning: number | null;
-  currentlyBuilding: string | null;
-  technologies: string[] | null;
-  skills: SkillDomains | null;
-  projects: PortfolioProject[] | null;
-  experience: PortfolioExperience[] | null;
-  githubUsername: string | null;
+  investmentGoal: string | null; // was role
+  investmentPhilosophy: string | null; // was tagline
+  appUsageInterest: string | null; // was bio
+  investmentExperienceYears: number | null; // was yearsLearning
+  currentFocus: string | null; // was currentlyBuilding
+  stocksWatching: string[] | null; // was technologies
+  sectors: MarketSectors | null; // was skills
+  pastInvestments: PastInvestment[] | null; // was projects
+  investmentMethods: InvestmentMethod[] | null; // was experience
   contactEmail: string | null;
   linkedin: string | null;
-  twitter: string | null;
-  calendly: string | null;
-  discord: string | null;
-  resumeUrl: string | null;
   onboardingCompleted: boolean;
 };
 
@@ -58,32 +48,12 @@ export type OnboardingStatus = {
   slug: string;
 };
 
-export type GithubStats = {
-  user: {
-    login: string;
-    name: string | null;
-    bio: string | null;
-    public_repos: number;
-    followers: number;
-    html_url: string;
-    avatar_url: string;
-  };
-  repos: Array<{
-    name: string;
-    description: string | null;
-    url: string;
-    stars: number;
-    language: string | null;
-    updatedAt: string;
-  }>;
-};
-
-export const SKILL_DOMAIN_LABELS: Record<keyof SkillDomains, string> = {
-  frontend: "Frontend",
-  backend: "Backend",
-  databases: "Databases",
-  aiMl: "AI / ML",
-  devops: "DevOps / Tools",
+export const SECTOR_LABELS: Record<keyof MarketSectors, string> = {
+  equity: "Equity / Stocks",
+  fixedIncome: "Fixed Income / Bonds",
+  commodities: "Commodities",
+  crypto: "Crypto / Digital Assets",
+  realEstate: "Real Estate",
 };
 
 export const parseTags = (value: string) =>

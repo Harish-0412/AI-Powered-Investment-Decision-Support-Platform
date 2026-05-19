@@ -34,10 +34,24 @@ export const getStockIndicators = async (req: Request, res: Response) => {
       rsiPeriod: Number(getQueryString(req.query.rsiPeriod)) || undefined,
       macdFastPeriod: Number(getQueryString(req.query.macdFastPeriod)) || undefined,
       macdSlowPeriod: Number(getQueryString(req.query.macdSlowPeriod)) || undefined,
-      macdSignalPeriod: Number(getQueryString(req.query.macdSignalPeriod)) || undefined
+      macdSignalPeriod: Number(getQueryString(req.query.macdSignalPeriod)) || undefined,
+      bbPeriod: Number(getQueryString(req.query.bbPeriod)) || undefined,
+      bbStdDev: Number(getQueryString(req.query.bbStdDev)) || undefined
     }
   );
 
+  res.json(result);
+};
+
+export const getStockPredictions = async (req: Request, res: Response) => {
+  const result = await analyticsService.getStockPredictions(getRequiredSymbol(req));
+  if (!result) throw new AppError(404, "Predictions not available for this symbol");
+  res.json(result);
+};
+
+export const getStockRecommendations = async (req: Request, res: Response) => {
+  const result = await analyticsService.getStockRecommendations(getRequiredSymbol(req));
+  if (!result) throw new AppError(404, "Recommendations not available for this symbol");
   res.json(result);
 };
 

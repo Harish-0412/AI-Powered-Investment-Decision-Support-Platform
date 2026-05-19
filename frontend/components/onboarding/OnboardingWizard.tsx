@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Plus } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { resolvePostAuthPath } from "@/lib/auth-redirect";
-import type { PortfolioExperience, PortfolioProject, PublicProfile, SkillDomains } from "@/lib/profile";
-import { joinTags, parseTags, SKILL_DOMAIN_LABELS } from "@/lib/profile";
+import type { InvestmentMethod, PastInvestment, PublicProfile, MarketSectors } from "@/lib/profile";
+import { joinTags, parseTags, SECTOR_LABELS } from "@/lib/profile";
 import { AssessmentShell } from "./AssessmentShell";
 import {
   FieldGroup,
@@ -18,54 +18,48 @@ import {
   SecondaryButton,
 } from "./AssessmentFields";
 
-const STEPS = ["Identity", "About", "Skills", "Projects", "Experience", "Contact"] as const;
+const STEPS = ["Identity", "Application Usage", "Market Focus", "Investment History", "Contact"] as const;
 
 const STEP_COPY: Record<number, { title: string; subtitle: string }> = {
   0: {
-    title: "Start with who you are",
-    subtitle: "Recruiters decide in seconds. Lead with a clear name, role, and one-line specialization.",
+    title: "Define your investor identity",
+    subtitle: "Lead with your primary investment goal and core philosophy.",
   },
   1: {
-    title: "Describe your technical focus",
-    subtitle: "Skip generic passion statements. Explain what you build, how long you've been learning, and your stack.",
+    title: "How will you use this platform?",
+    subtitle: "Explain your interest in market insights and your current focus areas.",
   },
   2: {
-    title: "Organize skills by domain",
-    subtitle: "Group technologies the way engineering teams think — frontend, backend, data, AI, and DevOps.",
+    title: "Organize focus by market sectors",
+    subtitle: "Group your interests the way portfolio managers think — Equity, Fixed Income, Crypto, etc.",
   },
   3: {
-    title: "Present projects like products",
-    subtitle: "Each project needs a problem, architecture, features, and engineering highlights.",
+    title: "Share your investment journey",
+    subtitle: "Past investments and methods help tailor your insights.",
   },
   4: {
-    title: "Show your journey",
-    subtitle: "Hackathons, open source, freelance work, and self-built products count as real experience.",
-  },
-  5: {
-    title: "Make it easy to hire you",
-    subtitle: "Add GitHub, email, LinkedIn, and optional scheduling links for recruiters and clients.",
+    title: "Stay connected",
+    subtitle: "Add your contact details for personalized updates and collaboration.",
   },
 };
 
-const emptyProject = (): PortfolioProject => ({
+const emptyInvestment = (): PastInvestment => ({
   id: crypto.randomUUID(),
-  slug: "new-project",
   name: "",
-  problem: "",
-  architecture: "",
-  techStack: [],
-  features: [],
-  engineeringHighlights: [],
-  featured: true,
+  assetClass: "",
+  entryPrice: "",
+  exitPrice: "",
+  duration: "",
+  keyTakeaway: "",
 });
 
-const emptyExperience = (): PortfolioExperience => ({
+const emptyMethod = (): InvestmentMethod => ({
   id: crypto.randomUUID(),
   title: "",
-  organization: "",
+  platform: "",
   period: "",
   description: "",
-  type: "project",
+  type: "sip",
 });
 
 export function OnboardingWizard() {
@@ -75,43 +69,33 @@ export function OnboardingWizard() {
   const [message, setMessage] = useState("");
 
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState("");
-  const [tagline, setTagline] = useState("");
-  const [bio, setBio] = useState("");
-  const [yearsLearning, setYearsLearning] = useState(3);
-  const [currentlyBuilding, setCurrentlyBuilding] = useState("");
-  const [technologies, setTechnologies] = useState("");
-  const [skills, setSkills] = useState<SkillDomains>({});
-  const [projects, setProjects] = useState<PortfolioProject[]>([]);
-  const [experience, setExperience] = useState<PortfolioExperience[]>([]);
-  const [githubUsername, setGithubUsername] = useState("");
+  const [investmentGoal, setInvestmentGoal] = useState("");
+  const [investmentPhilosophy, setInvestmentPhilosophy] = useState("");
+  const [appUsageInterest, setAppUsageInterest] = useState("");
+  const [investmentExperienceYears, setInvestmentExperienceYears] = useState(1);
+  const [currentFocus, setCurrentFocus] = useState("");
+  const [stocksWatching, setStocksWatching] = useState("");
+  const [sectors, setSectors] = useState<MarketSectors>({});
+  const [pastInvestments, setPastInvestments] = useState<PastInvestment[]>([]);
+  const [investmentMethods, setInvestmentMethods] = useState<InvestmentMethod[]>([]);
   const [contactEmail, setContactEmail] = useState("");
   const [linkedin, setLinkedin] = useState("");
-  const [twitter, setTwitter] = useState("");
-  const [calendly, setCalendly] = useState("");
-  const [discord, setDiscord] = useState("");
-  const [resumeUrl, setResumeUrl] = useState("");
 
   useEffect(() => {
     apiRequest<PublicProfile>("/profile/me")
       .then((profile) => {
         setFullName(profile.fullName ?? "");
-        setRole(profile.role ?? "");
-        setTagline(profile.tagline ?? "");
-        setBio(profile.bio ?? "");
-        setYearsLearning(profile.yearsLearning ?? 3);
-        setCurrentlyBuilding(profile.currentlyBuilding ?? "");
-        setTechnologies(joinTags(profile.technologies ?? undefined));
-        setSkills(profile.skills ?? {});
-        setProjects(profile.projects?.length ? profile.projects : [emptyProject()]);
-        setExperience(profile.experience ?? []);
-        setGithubUsername(profile.githubUsername ?? "");
+        setInvestmentGoal(profile.investmentGoal ?? "");
+        setInvestmentPhilosophy(profile.investmentPhilosophy ?? "");
+        setAppUsageInterest(profile.appUsageInterest ?? "");
+        setInvestmentExperienceYears(profile.investmentExperienceYears ?? 1);
+        setCurrentFocus(profile.currentFocus ?? "");
+        setStocksWatching(joinTags(profile.stocksWatching ?? undefined));
+        setSectors(profile.sectors ?? {});
+        setPastInvestments(profile.pastInvestments?.length ? profile.pastInvestments : [emptyInvestment()]);
+        setInvestmentMethods(profile.investmentMethods ?? []);
         setContactEmail(profile.contactEmail ?? "");
         setLinkedin(profile.linkedin ?? "");
-        setTwitter(profile.twitter ?? "");
-        setCalendly(profile.calendly ?? "");
-        setDiscord(profile.discord ?? "");
-        setResumeUrl(profile.resumeUrl ?? "");
         if (profile.onboardingCompleted) {
           window.location.href = `/portfolio/${profile.slug}`;
         }
@@ -129,22 +113,17 @@ export function OnboardingWizard() {
         body: JSON.stringify({
           step: nextStep,
           fullName,
-          role,
-          tagline,
-          bio,
-          yearsLearning,
-          currentlyBuilding,
-          technologies: parseTags(technologies),
-          skills,
-          projects,
-          experience,
-          githubUsername,
+          investmentGoal,
+          investmentPhilosophy,
+          appUsageInterest,
+          investmentExperienceYears,
+          currentFocus,
+          stocksWatching: parseTags(stocksWatching),
+          sectors,
+          pastInvestments,
+          investmentMethods,
           contactEmail,
           linkedin: linkedin || undefined,
-          twitter: twitter || undefined,
-          calendly: calendly || undefined,
-          discord,
-          resumeUrl: resumeUrl || undefined,
           complete,
         }),
       });
@@ -163,14 +142,14 @@ export function OnboardingWizard() {
     }
   };
 
-  const updateSkillDomain = (key: keyof SkillDomains, value: string) => {
-    setSkills((prev) => ({ ...prev, [key]: parseTags(value) }));
+  const updateSectorDomain = (key: keyof MarketSectors, value: string) => {
+    setSectors((prev) => ({ ...prev, [key]: parseTags(value) }));
   };
 
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center text-[#52625a] font-semibold">
-        Preparing your portfolio setup…
+        Preparing your assessment setup…
       </div>
     );
   }
@@ -191,7 +170,7 @@ export function OnboardingWizard() {
         </PrimaryButton>
       ) : (
         <PrimaryButton disabled={saving} onClick={() => saveStep(step, true)}>
-          {saving ? "Finishing…" : "Publish portfolio"}
+          {saving ? "Finishing…" : "Publish profile"}
           {!saving && <ArrowRight className="ml-2 h-4 w-4" />}
         </PrimaryButton>
       )}
@@ -208,19 +187,19 @@ export function OnboardingWizard() {
           <FieldInput value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Harish K" />
         </label>
         <label>
-          <FieldLabel>Role</FieldLabel>
+          <FieldLabel>Primary investment goal</FieldLabel>
           <FieldInput
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            placeholder="Full Stack Developer & AI Systems Builder"
+            value={investmentGoal}
+            onChange={(e) => setInvestmentGoal(e.target.value)}
+            placeholder="Wealth Creation / Retirement / Passive Income"
           />
         </label>
         <label>
-          <FieldLabel hint="One sentence recruiters will remember">Specialization</FieldLabel>
+          <FieldLabel hint="One sentence about your approach">Investment philosophy</FieldLabel>
           <FieldInput
-            value={tagline}
-            onChange={(e) => setTagline(e.target.value)}
-            placeholder="Building intelligent, scalable web applications with AI and modern engineering."
+            value={investmentPhilosophy}
+            onChange={(e) => setInvestmentPhilosophy(e.target.value)}
+            placeholder="Value investing with a focus on long-term compound growth."
           />
         </label>
       </FieldGroup>
@@ -229,38 +208,38 @@ export function OnboardingWizard() {
     stepContent = (
       <FieldGroup>
         <label>
-          <FieldLabel>Technical bio</FieldLabel>
+          <FieldLabel>Application usage interest</FieldLabel>
           <FieldTextarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
+            value={appUsageInterest}
+            onChange={(e) => setAppUsageInterest(e.target.value)}
             rows={4}
-            placeholder="Full-stack focus on AI systems, scalable backends, recommendation engines…"
+            placeholder="I want to use Investment Intelligence for tracking my portfolio risk and finding market insights…"
           />
         </label>
         <label>
-          <FieldLabel>Years learning / building</FieldLabel>
+          <FieldLabel>Years of investment experience</FieldLabel>
           <FieldInput
             type="number"
             min={0}
-            value={yearsLearning}
-            onChange={(e) => setYearsLearning(Number(e.target.value))}
+            value={investmentExperienceYears}
+            onChange={(e) => setInvestmentExperienceYears(Number(e.target.value))}
           />
         </label>
         <label>
-          <FieldLabel>Currently building</FieldLabel>
+          <FieldLabel>Current investment focus</FieldLabel>
           <FieldTextarea
-            value={currentlyBuilding}
-            onChange={(e) => setCurrentlyBuilding(e.target.value)}
+            value={currentFocus}
+            onChange={(e) => setCurrentFocus(e.target.value)}
             rows={2}
-            placeholder="Investment Intelligence — AI portfolio & market analytics platform"
+            placeholder="Focusing on blue-chip stocks and emerging technology sectors."
           />
         </label>
         <label>
-          <FieldLabel hint="Comma-separated">Core technologies</FieldLabel>
+          <FieldLabel hint="Comma-separated tickers">Stocks you are watching</FieldLabel>
           <FieldInput
-            value={technologies}
-            onChange={(e) => setTechnologies(e.target.value)}
-            placeholder="TypeScript, Node.js, PostgreSQL, Redis, Next.js"
+            value={stocksWatching}
+            onChange={(e) => setStocksWatching(e.target.value)}
+            placeholder="AAPL, MSFT, GOOGL, RELIANCE"
           />
         </label>
       </FieldGroup>
@@ -268,14 +247,14 @@ export function OnboardingWizard() {
   } else if (step === 2) {
     stepContent = (
       <div className="space-y-3 max-h-[min(420px,50vh)] overflow-y-auto pr-1">
-        {Object.entries(SKILL_DOMAIN_LABELS).map(([key, label]) => (
+        {Object.entries(SECTOR_LABELS).map(([key, label]) => (
           <FieldGroup key={key} className="!p-4">
             <label>
               <FieldLabel>{label}</FieldLabel>
               <FieldInput
-                value={joinTags(skills[key as keyof SkillDomains])}
-                onChange={(e) => updateSkillDomain(key as keyof SkillDomains, e.target.value)}
-                placeholder="React, Next.js, Tailwind"
+                value={joinTags(sectors[key as keyof MarketSectors])}
+                onChange={(e) => updateSectorDomain(key as keyof MarketSectors, e.target.value)}
+                placeholder="Technology, Healthcare, Finance"
               />
             </label>
           </FieldGroup>
@@ -285,141 +264,117 @@ export function OnboardingWizard() {
   } else if (step === 3) {
     stepContent = (
       <div className="space-y-4 max-h-[min(480px,55vh)] overflow-y-auto pr-1">
-        {projects.map((project, index) => (
-          <FieldGroup key={project.id}>
+        <h3 className="text-sm font-semibold text-[#101412] px-1">Past investments</h3>
+        {pastInvestments.map((investment, index) => (
+          <FieldGroup key={investment.id}>
             <label>
-              <FieldLabel>Project name</FieldLabel>
+              <FieldLabel>Investment name</FieldLabel>
               <FieldInput
-                value={project.name}
+                value={investment.name}
                 onChange={(e) => {
-                  const next = [...projects];
-                  next[index] = {
-                    ...project,
-                    name: e.target.value,
-                    slug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "project",
-                  };
-                  setProjects(next);
-                }}
-              />
-            </label>
-            <label>
-              <FieldLabel>Problem solved</FieldLabel>
-              <FieldTextarea
-                value={project.problem}
-                onChange={(e) => {
-                  const next = [...projects];
-                  next[index] = { ...project, problem: e.target.value };
-                  setProjects(next);
-                }}
-                rows={2}
-              />
-            </label>
-            <label>
-              <FieldLabel>Architecture</FieldLabel>
-              <FieldTextarea
-                value={project.architecture}
-                onChange={(e) => {
-                  const next = [...projects];
-                  next[index] = { ...project, architecture: e.target.value };
-                  setProjects(next);
-                }}
-                rows={2}
-              />
-            </label>
-            <label>
-              <FieldLabel hint="Comma-separated">Tech stack</FieldLabel>
-              <FieldInput
-                value={joinTags(project.techStack)}
-                onChange={(e) => {
-                  const next = [...projects];
-                  next[index] = { ...project, techStack: parseTags(e.target.value) };
-                  setProjects(next);
-                }}
-              />
-            </label>
-            <label>
-              <FieldLabel hint="Comma-separated">Key features</FieldLabel>
-              <FieldInput
-                value={joinTags(project.features)}
-                onChange={(e) => {
-                  const next = [...projects];
-                  next[index] = { ...project, features: parseTags(e.target.value) };
-                  setProjects(next);
-                }}
-              />
-            </label>
-            <label>
-              <FieldLabel hint="Comma-separated">Engineering highlights</FieldLabel>
-              <FieldInput
-                value={joinTags(project.engineeringHighlights)}
-                onChange={(e) => {
-                  const next = [...projects];
-                  next[index] = { ...project, engineeringHighlights: parseTags(e.target.value) };
-                  setProjects(next);
+                  const next = [...pastInvestments];
+                  next[index] = { ...investment, name: e.target.value };
+                  setPastInvestments(next);
                 }}
               />
             </label>
             <div className="grid sm:grid-cols-2 gap-3">
               <label>
-                <FieldLabel>GitHub URL</FieldLabel>
+                <FieldLabel>Asset class</FieldLabel>
                 <FieldInput
-                  value={project.githubUrl ?? ""}
+                  value={investment.assetClass}
                   onChange={(e) => {
-                    const next = [...projects];
-                    next[index] = { ...project, githubUrl: e.target.value };
-                    setProjects(next);
+                    const next = [...pastInvestments];
+                    next[index] = { ...investment, assetClass: e.target.value };
+                    setPastInvestments(next);
+                  }}
+                  placeholder="Equity / Mutual Fund"
+                />
+              </label>
+              <label>
+                <FieldLabel>Duration</FieldLabel>
+                <FieldInput
+                  value={investment.duration}
+                  onChange={(e) => {
+                    const next = [...pastInvestments];
+                    next[index] = { ...investment, duration: e.target.value };
+                    setPastInvestments(next);
+                  }}
+                  placeholder="2 years"
+                />
+              </label>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <label>
+                <FieldLabel>Entry price</FieldLabel>
+                <FieldInput
+                  value={investment.entryPrice}
+                  onChange={(e) => {
+                    const next = [...pastInvestments];
+                    next[index] = { ...investment, entryPrice: e.target.value };
+                    setPastInvestments(next);
                   }}
                 />
               </label>
               <label>
-                <FieldLabel>Live demo URL</FieldLabel>
+                <FieldLabel>Exit price (if applicable)</FieldLabel>
                 <FieldInput
-                  value={project.liveUrl ?? ""}
+                  value={investment.exitPrice ?? ""}
                   onChange={(e) => {
-                    const next = [...projects];
-                    next[index] = { ...project, liveUrl: e.target.value };
-                    setProjects(next);
+                    const next = [...pastInvestments];
+                    next[index] = { ...investment, exitPrice: e.target.value };
+                    setPastInvestments(next);
                   }}
                 />
               </label>
             </div>
+            <label>
+              <FieldLabel>Key takeaway</FieldLabel>
+              <FieldTextarea
+                value={investment.keyTakeaway}
+                onChange={(e) => {
+                  const next = [...pastInvestments];
+                  next[index] = { ...investment, keyTakeaway: e.target.value };
+                  setPastInvestments(next);
+                }}
+                rows={2}
+              />
+            </label>
           </FieldGroup>
         ))}
-        <SecondaryButton type="button" onClick={() => setProjects((p) => [...p, emptyProject()])} className="w-full">
+        <SecondaryButton type="button" onClick={() => setPastInvestments((p) => [...p, emptyInvestment()])} className="w-full">
           <Plus className="h-4 w-4 mr-2" />
-          Add another project
+          Add another investment
         </SecondaryButton>
-      </div>
-    );
-  } else if (step === 4) {
-    stepContent = (
-      <div className="space-y-4 max-h-[min(480px,55vh)] overflow-y-auto pr-1">
-        {experience.length === 0 && (
-          <p className="text-sm text-[#52625a]">No entries yet — add your first milestone below.</p>
-        )}
-        {experience.map((item, index) => (
+
+        <hr className="my-6 border-[#1014121a]" />
+        
+        <h3 className="text-sm font-semibold text-[#101412] px-1">Investment methods</h3>
+        {investmentMethods.map((item, index) => (
           <FieldGroup key={item.id}>
             <label>
               <FieldLabel>Title</FieldLabel>
               <FieldInput
                 value={item.title}
                 onChange={(e) => {
-                  const next = [...experience];
+                  const next = [...investmentMethods];
                   next[index] = { ...item, title: e.target.value };
-                  setExperience(next);
+                  setInvestmentMethods(next);
                 }}
+                placeholder="Monthly SIP in Index Funds"
               />
             </label>
             <div className="grid sm:grid-cols-2 gap-3">
               <label>
-                <FieldLabel>Organization</FieldLabel>
+                <FieldLabel>Platform / Broker</FieldLabel>
                 <FieldInput
-                  value={item.organization}
+                  value={item.platform}
                   onChange={(e) => {
-                    const next = [...experience];
-                    next[index] = { ...item, organization: e.target.value };
-                    setExperience(next);
+                    const next = [...investmentMethods];
+                    next[index] = { ...item, platform: e.target.value };
+                    setInvestmentMethods(next);
                   }}
+                  placeholder="Zerodha / Groww / Vanguard"
                 />
               </label>
               <label>
@@ -427,11 +382,11 @@ export function OnboardingWizard() {
                 <FieldInput
                   value={item.period}
                   onChange={(e) => {
-                    const next = [...experience];
+                    const next = [...investmentMethods];
                     next[index] = { ...item, period: e.target.value };
-                    setExperience(next);
+                    setInvestmentMethods(next);
                   }}
-                  placeholder="2024 – Present"
+                  placeholder="2022 – Present"
                 />
               </label>
             </div>
@@ -440,17 +395,16 @@ export function OnboardingWizard() {
               <FieldSelect
                 value={item.type}
                 onChange={(e) => {
-                  const next = [...experience];
-                  next[index] = { ...item, type: e.target.value as PortfolioExperience["type"] };
-                  setExperience(next);
+                  const next = [...investmentMethods];
+                  next[index] = { ...item, type: e.target.value as InvestmentMethod["type"] };
+                  setInvestmentMethods(next);
                 }}
               >
-                <option value="project">Self-built product</option>
-                <option value="hackathon">Hackathon</option>
-                <option value="opensource">Open source</option>
-                <option value="freelance">Freelance</option>
-                <option value="work">Work</option>
-                <option value="research">Research</option>
+                <option value="sip">SIP (Systematic Investment Plan)</option>
+                <option value="lumpsum">Lumpsum</option>
+                <option value="trading">Active Trading</option>
+                <option value="index">Index Investing</option>
+                <option value="other">Other</option>
               </FieldSelect>
             </label>
             <label>
@@ -458,32 +412,24 @@ export function OnboardingWizard() {
               <FieldTextarea
                 value={item.description}
                 onChange={(e) => {
-                  const next = [...experience];
+                  const next = [...investmentMethods];
                   next[index] = { ...item, description: e.target.value };
-                  setExperience(next);
+                  setInvestmentMethods(next);
                 }}
                 rows={3}
               />
             </label>
           </FieldGroup>
         ))}
-        <SecondaryButton type="button" onClick={() => setExperience((e) => [...e, emptyExperience()])} className="w-full">
+        <SecondaryButton type="button" onClick={() => setInvestmentMethods((e) => [...e, emptyMethod()])} className="w-full">
           <Plus className="h-4 w-4 mr-2" />
-          Add experience
+          Add investment method
         </SecondaryButton>
       </div>
     );
-  } else if (step === 5) {
+  } else if (step === 4) {
     stepContent = (
       <FieldGroup>
-        <label>
-          <FieldLabel>GitHub username</FieldLabel>
-          <FieldInput
-            value={githubUsername}
-            onChange={(e) => setGithubUsername(e.target.value)}
-            placeholder="your-handle"
-          />
-        </label>
         <label>
           <FieldLabel>Contact email</FieldLabel>
           <FieldInput
@@ -493,27 +439,9 @@ export function OnboardingWizard() {
             placeholder="you@example.com"
           />
         </label>
-        <div className="grid sm:grid-cols-2 gap-3">
-          <label>
-            <FieldLabel>LinkedIn</FieldLabel>
-            <FieldInput value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/…" />
-          </label>
-          <label>
-            <FieldLabel>X / Twitter</FieldLabel>
-            <FieldInput value={twitter} onChange={(e) => setTwitter(e.target.value)} />
-          </label>
-        </div>
         <label>
-          <FieldLabel>Calendly (optional)</FieldLabel>
-          <FieldInput value={calendly} onChange={(e) => setCalendly(e.target.value)} />
-        </label>
-        <label>
-          <FieldLabel>Discord (optional)</FieldLabel>
-          <FieldInput value={discord} onChange={(e) => setDiscord(e.target.value)} />
-        </label>
-        <label>
-          <FieldLabel>Resume PDF URL</FieldLabel>
-          <FieldInput value={resumeUrl} onChange={(e) => setResumeUrl(e.target.value)} placeholder="https://…" />
+          <FieldLabel>LinkedIn (optional)</FieldLabel>
+          <FieldInput value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/…" />
         </label>
       </FieldGroup>
     );

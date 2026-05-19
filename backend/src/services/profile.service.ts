@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { getPrisma } from "../lib/prisma";
 import { getLocalPrisma } from "../lib/prisma-local";
-import { DEFAULT_APP_PROJECT, DEFAULT_SKILLS } from "../constants/default-portfolio";
+import { DEFAULT_APP_PROJECT, DEFAULT_SECTORS } from "../constants/default-portfolio";
 import type { OnboardingPayload, PublicProfile } from "../types/profile.types";
 
 const slugify = (value: string) =>
@@ -10,7 +10,7 @@ const slugify = (value: string) =>
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 48) || "developer";
+    .slice(0, 48) || "investor";
 
 const uniqueSlug = async (base: string, excludeUserId?: string) => {
   let slug = slugify(base);
@@ -36,33 +36,23 @@ const toPublicProfile = (profile: {
   skills: unknown;
   projects: unknown;
   experience: unknown;
-  githubUsername: string | null;
   contactEmail: string | null;
   linkedin: string | null;
-  twitter: string | null;
-  calendly: string | null;
-  discord: string | null;
-  resumeUrl: string | null;
   onboardingCompleted: boolean;
 }): PublicProfile => ({
   slug: profile.slug,
   fullName: profile.fullName,
-  role: profile.role,
-  tagline: profile.tagline,
-  bio: profile.bio,
-  yearsLearning: profile.yearsLearning,
-  currentlyBuilding: profile.currentlyBuilding,
-  technologies: (profile.technologies as string[] | null) ?? null,
-  skills: (profile.skills as PublicProfile["skills"]) ?? null,
-  projects: (profile.projects as PublicProfile["projects"]) ?? null,
-  experience: (profile.experience as PublicProfile["experience"]) ?? null,
-  githubUsername: profile.githubUsername,
+  investmentGoal: profile.role,
+  investmentPhilosophy: profile.tagline,
+  appUsageInterest: profile.bio,
+  investmentExperienceYears: profile.yearsLearning,
+  currentFocus: profile.currentlyBuilding,
+  stocksWatching: (profile.technologies as string[] | null) ?? null,
+  sectors: (profile.skills as PublicProfile["sectors"]) ?? null,
+  pastInvestments: (profile.projects as PublicProfile["pastInvestments"]) ?? null,
+  investmentMethods: (profile.experience as PublicProfile["investmentMethods"]) ?? null,
   contactEmail: profile.contactEmail,
   linkedin: profile.linkedin,
-  twitter: profile.twitter,
-  calendly: profile.calendly,
-  discord: profile.discord,
-  resumeUrl: profile.resumeUrl,
   onboardingCompleted: profile.onboardingCompleted,
 });
 
@@ -88,13 +78,8 @@ const syncToLocal = async (userId: string) => {
       skills: primary.skills ?? undefined,
       projects: primary.projects ?? undefined,
       experience: primary.experience ?? undefined,
-      githubUsername: primary.githubUsername,
       contactEmail: primary.contactEmail,
       linkedin: primary.linkedin,
-      twitter: primary.twitter,
-      calendly: primary.calendly,
-      discord: primary.discord,
-      resumeUrl: primary.resumeUrl,
       onboardingCompleted: primary.onboardingCompleted,
       onboardingStep: primary.onboardingStep,
     };
@@ -113,7 +98,7 @@ export const ensureProfileForUser = async (userId: string, email: string, name?:
   const existing = await getPrisma().userProfile.findUnique({ where: { userId } });
   if (existing) return existing;
 
-  const slug = await uniqueSlug(name || email.split("@")[0] || "developer");
+  const slug = await uniqueSlug(name || email.split("@")[0] || "investor");
   const profile = await getPrisma().userProfile.create({
     data: {
       userId,
@@ -121,7 +106,7 @@ export const ensureProfileForUser = async (userId: string, email: string, name?:
       fullName: name ?? null,
       contactEmail: email,
       projects: [DEFAULT_APP_PROJECT],
-      skills: DEFAULT_SKILLS,
+      skills: DEFAULT_SECTORS,
     },
   });
 
@@ -165,26 +150,21 @@ export const updateOnboarding = async (userId: string, payload: OnboardingPayloa
   };
 
   if (payload.fullName !== undefined) data.fullName = payload.fullName;
-  if (payload.role !== undefined) data.role = payload.role;
-  if (payload.tagline !== undefined) data.tagline = payload.tagline;
-  if (payload.bio !== undefined) data.bio = payload.bio;
-  if (payload.yearsLearning !== undefined) data.yearsLearning = payload.yearsLearning;
-  if (payload.currentlyBuilding !== undefined) data.currentlyBuilding = payload.currentlyBuilding;
-  if (payload.technologies !== undefined) data.technologies = payload.technologies;
-  if (payload.skills !== undefined) data.skills = payload.skills;
-  if (payload.projects !== undefined) data.projects = payload.projects;
-  if (payload.experience !== undefined) data.experience = payload.experience;
-  if (payload.githubUsername !== undefined) data.githubUsername = payload.githubUsername;
+  if (payload.investmentGoal !== undefined) data.role = payload.investmentGoal;
+  if (payload.investmentPhilosophy !== undefined) data.tagline = payload.investmentPhilosophy;
+  if (payload.appUsageInterest !== undefined) data.bio = payload.appUsageInterest;
+  if (payload.investmentExperienceYears !== undefined) data.yearsLearning = payload.investmentExperienceYears;
+  if (payload.currentFocus !== undefined) data.currentlyBuilding = payload.currentFocus;
+  if (payload.stocksWatching !== undefined) data.technologies = payload.stocksWatching;
+  if (payload.sectors !== undefined) data.skills = payload.sectors;
+  if (payload.pastInvestments !== undefined) data.projects = payload.pastInvestments;
+  if (payload.investmentMethods !== undefined) data.experience = payload.investmentMethods;
   if (payload.contactEmail !== undefined) data.contactEmail = payload.contactEmail;
   if (payload.linkedin !== undefined) data.linkedin = payload.linkedin;
-  if (payload.twitter !== undefined) data.twitter = payload.twitter;
-  if (payload.calendly !== undefined) data.calendly = payload.calendly;
-  if (payload.discord !== undefined) data.discord = payload.discord;
-  if (payload.resumeUrl !== undefined) data.resumeUrl = payload.resumeUrl;
 
   if (payload.complete) {
     data.onboardingCompleted = true;
-    data.onboardingStep = 6;
+    data.onboardingStep = 5; // Reduced from 6 since we removed a step
   }
 
   const updated = await getPrisma().userProfile.update({
@@ -197,47 +177,7 @@ export const updateOnboarding = async (userId: string, payload: OnboardingPayloa
 };
 
 export const fetchGithubStats = async (username: string) => {
-  const userRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`, {
-    headers: { Accept: "application/vnd.github+json" },
-  });
-
-  if (!userRes.ok) return null;
-
-  const user = (await userRes.json()) as {
-    login: string;
-    name: string | null;
-    bio: string | null;
-    public_repos: number;
-    followers: number;
-    html_url: string;
-    avatar_url: string;
-  };
-
-  const reposRes = await fetch(
-    `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=6`,
-    { headers: { Accept: "application/vnd.github+json" } }
-  );
-
-  const repos = reposRes.ok
-    ? ((await reposRes.json()) as Array<{
-        name: string;
-        description: string | null;
-        html_url: string;
-        stargazers_count: number;
-        language: string | null;
-        updated_at: string;
-      }>)
-    : [];
-
-  return {
-    user,
-    repos: repos.map((repo) => ({
-      name: repo.name,
-      description: repo.description,
-      url: repo.html_url,
-      stars: repo.stargazers_count,
-      language: repo.language,
-      updatedAt: repo.updated_at,
-    })),
-  };
+  // Keeping this for now to avoid breaking other potential uses, 
+  // but we won't call it in our new flow.
+  return null;
 };

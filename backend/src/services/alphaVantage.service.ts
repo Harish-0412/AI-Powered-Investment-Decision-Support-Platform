@@ -12,7 +12,8 @@ const CACHE_TTL = {
   fundamentals: 86400,
   earnings: 86400,
   news: 10800,
-  technicalIndicator: 3600
+  technicalIndicator: 3600,
+  dividends: 86400
 };
 
 const requestTimestamps: number[] = [];
@@ -117,6 +118,10 @@ export const getCompanyOverview = (symbol: string) => {
 
 export const getCompanyEarnings = (symbol: string) => {
   return requestAlphaVantage("EARNINGS", { symbol: normalizeSymbol(symbol) }, CACHE_TTL.earnings);
+};
+
+export const getDividends = (symbol: string) => {
+  return requestAlphaVantage("DIVIDENDS", { symbol: normalizeSymbol(symbol) }, CACHE_TTL.dividends);
 };
 
 export const getNewsSentiment = (symbol: string, limit = 50) => {

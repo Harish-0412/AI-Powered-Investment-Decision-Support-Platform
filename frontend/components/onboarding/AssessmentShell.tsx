@@ -145,7 +145,7 @@ export function AssessmentShell({
 
           <motion.p variants={itemVariants} className="mt-4 text-xs text-[#8a9a92] flex items-center gap-1">
             <Sparkles className="h-3.5 w-3.5 text-[#4aa87a]" aria-hidden />
-            Your answers power a public portfolio recruiters can scan in under 60 seconds.
+            Your answers power a public profile focused on your investment strategy.
             <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </motion.p>
         </motion.div>
@@ -168,10 +168,10 @@ export function AssessmentShell({
               {stepLabels[step]}
             </p>
             <p className="text-2xl font-bold leading-snug max-w-sm">
-              Build a recruiter-ready engineering profile.
+              Build a comprehensive investment profile.
             </p>
             <p className="mt-3 text-sm text-white/75 max-w-sm leading-relaxed">
-              Showcase real systems, architecture decisions, and production engineering — not template filler.
+              Showcase your market focus, investment journey, and strategic asset allocation.
             </p>
           </div>
         </motion.div>

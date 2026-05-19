@@ -1,75 +1,60 @@
-export type SkillDomains = {
-  frontend?: string[];
-  backend?: string[];
-  databases?: string[];
-  aiMl?: string[];
-  devops?: string[];
+export type MarketSectors = {
+  equity?: string[];
+  fixedIncome?: string[];
+  commodities?: string[];
+  crypto?: string[];
+  realEstate?: string[];
 };
 
-export type PortfolioProject = {
+export type PastInvestment = {
   id: string;
-  slug: string;
   name: string;
-  problem: string;
-  architecture: string;
-  techStack: string[];
-  features: string[];
-  engineeringHighlights: string[];
-  githubUrl?: string;
-  liveUrl?: string;
-  imageUrl?: string;
-  featured?: boolean;
+  assetClass: string;
+  entryPrice: string;
+  exitPrice?: string;
+  duration: string;
+  keyTakeaway: string;
 };
 
-export type PortfolioExperience = {
+export type InvestmentMethod = {
   id: string;
   title: string;
-  organization: string;
+  platform: string;
   period: string;
   description: string;
-  type: "hackathon" | "opensource" | "freelance" | "project" | "work" | "research";
+  type: "sip" | "lumpsum" | "trading" | "index" | "other";
 };
 
 export type OnboardingPayload = {
   step: number;
   fullName?: string;
-  role?: string;
-  tagline?: string;
-  bio?: string;
-  yearsLearning?: number;
-  currentlyBuilding?: string;
-  technologies?: string[];
-  skills?: SkillDomains;
-  projects?: PortfolioProject[];
-  experience?: PortfolioExperience[];
-  githubUsername?: string;
+  investmentGoal?: string;
+  investmentPhilosophy?: string;
+  appUsageInterest?: string;
+  investmentExperienceYears?: number;
+  currentFocus?: string;
+  stocksWatching?: string[];
+  sectors?: MarketSectors;
+  pastInvestments?: PastInvestment[];
+  investmentMethods?: InvestmentMethod[];
   contactEmail?: string;
   linkedin?: string;
-  twitter?: string;
-  calendly?: string;
-  discord?: string;
-  resumeUrl?: string;
   complete?: boolean;
 };
 
 export type PublicProfile = {
   slug: string;
   fullName: string | null;
-  role: string | null;
-  tagline: string | null;
-  bio: string | null;
-  yearsLearning: number | null;
-  currentlyBuilding: string | null;
-  technologies: string[] | null;
-  skills: SkillDomains | null;
-  projects: PortfolioProject[] | null;
-  experience: PortfolioExperience[] | null;
-  githubUsername: string | null;
+  investmentGoal: string | null;
+  investmentPhilosophy: string | null;
+  appUsageInterest: string | null;
+  investmentExperienceYears: number | null;
+  currentFocus: string | null;
+  stocksWatching: string[] | null;
+  sectors: MarketSectors | null;
+  pastInvestments: PastInvestment[] | null;
+  investmentMethods: InvestmentMethod[] | null;
   contactEmail: string | null;
   linkedin: string | null;
-  twitter: string | null;
-  calendly: string | null;
-  discord: string | null;
-  resumeUrl: string | null;
   onboardingCompleted: boolean;
 };
