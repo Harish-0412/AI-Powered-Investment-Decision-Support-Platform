@@ -29,7 +29,7 @@ services:
       - key: NEWS_API_KEY
         value: 984372f759f5467d8e8d6aae6c844e48
       - key: FRONTEND_URL
-        sync: false # Should be set to the Vercel URL after frontend deployment
+        value: https://nvest-psi.vercel.app
 
 databases:
   - name: investment-intelligence-db

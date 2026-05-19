@@ -16,10 +16,24 @@ import { adminRouter } from "./routes/admin.routes";
 
 export const app = express();
 
+const normalizeOrigin = (origin: string) => origin.replace(/\/$/, "");
+const allowedOrigins = new Set([
+  normalizeOrigin(env.FRONTEND_URL),
+  "https://nvest-psi.vercel.app",
+  "http://localhost:3000"
+]);
+
 app.use(helmet());
 app.use(
   cors({
-    origin: env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(normalizeOrigin(origin))) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true
   })
 );
