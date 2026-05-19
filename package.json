@@ -4,7 +4,7 @@
   "private": true,
   "description": "Render deployment wrapper for the Investment Intelligence backend.",
   "scripts": {
-    "postinstall": "npm ci --prefix backend && npm run build --prefix backend",
+    "postinstall": "npm ci --include=dev --prefix backend && npm run build --prefix backend",
     "build": "npm run build --prefix backend",
     "start": "npm run prisma:deploy --prefix backend && npm start --prefix backend"
   },
