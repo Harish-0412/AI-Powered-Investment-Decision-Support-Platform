@@ -5,8 +5,19 @@ import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { AuthGate } from "@/components/AuthGate";
 import { apiRequest } from "@/lib/api";
+import { Newspaper, Clock, ExternalLink, ArrowRight, Filter } from "lucide-react";
+import { NewsModal } from "@/components/NewsModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+type NewsArticle = {
+  source: { name: string };
+  title: string;
+  description: string;
+  url: string;
+  urlToImage: string | null;
+  publishedAt: string;
+};
 
 type StockItem = {
   symbol: string;
@@ -27,15 +38,6 @@ type StockListResult = {
   page: number;
   pageSize: number;
   totalPages: number;
-};
-
-type NewsItem = {
-  title: string;
-  url: string;
-  time_published: string;
-  source: string;
-  summary: string;
-  overall_sentiment_label: string;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -115,8 +117,9 @@ export default function StocksPage() {
   const [page, setPage] = useState(1);
 
   // News
-  const [news, setNews] = useState<NewsItem[]>([]);
+  const [news, setNews] = useState<NewsArticle[]>([]);
   const [newsLoading, setNewsLoading] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
 
   const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -147,8 +150,8 @@ export default function StocksPage() {
   const fetchNews = useCallback(async () => {
     setNewsLoading(true);
     try {
-      const data = await apiRequest<{ feed: NewsItem[] }>("/stocks/RELIANCE.NS/alpha/news-sentiment");
-      setNews((data.feed ?? []).slice(0, 6));
+      const data = await apiRequest<NewsArticle[]>("/news/top");
+      setNews(data.slice(0, 4));
     } catch {
       // news is non-critical
     } finally {
@@ -429,42 +432,61 @@ export default function StocksPage() {
             )}
 
             {/* Related News */}
-            <section className="stocks-news">
-              <h2 className="news-heading">Market News</h2>
+            <section className="stocks-news-section mt-12 pt-12 border-t border-[#f0f0f0]">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-[#e8f5ee] rounded-lg">
+                    <Newspaper className="h-6 w-6 text-[#4aa87a]" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-[#101412]">Market Intelligence</h2>
+                </div>
+                <Link href="/app" className="text-sm font-bold text-[#4aa87a] flex items-center gap-1 hover:underline">
+                  View all news <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+
               {newsLoading ? (
-                <p className="news-loading">Loading news…</p>
-              ) : news.length > 0 ? (
-                <div className="news-grid">
-                  {news.map((item, i) => (
-                    <a key={i} href={item.url} target="_blank" rel="noopener noreferrer" className="news-card">
-                      <div className="news-meta">
-                        <span className="news-source">{item.source}</span>
-                        <span className={`news-sentiment sentiment-${item.overall_sentiment_label?.toLowerCase().replace(" ", "-")}`}>
-                          {item.overall_sentiment_label}
-                        </span>
-                      </div>
-                      <p className="news-title">{item.title}</p>
-                      <p className="news-summary">{item.summary?.slice(0, 120)}…</p>
-                      <span className="news-date">
-                        {item.time_published
-                          ? new Date(
-                              item.time_published.replace(
-                                /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/,
-                                "$1-$2-$3T$4:$5:$6"
-                              )
-                            ).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-                          : ""}
-                      </span>
-                    </a>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="workspace-panel animate-pulse h-48 rounded-xl" />
                   ))}
                 </div>
               ) : (
-                <p className="news-empty">Configure an Alpha Vantage API key to see market news.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {news.map((article, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => setSelectedArticle(article)}
+                      className="workspace-panel hover:border-[#4aa87a] transition-all flex flex-col group text-left p-4 rounded-xl border-2 border-transparent hover:shadow-lg"
+                    >
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-[#8a9a92] uppercase mb-3">
+                        <Clock className="h-3 w-3" />
+                        {new Date(article.publishedAt).toLocaleDateString()}
+                      </div>
+                      <h3 className="text-sm font-bold text-[#101412] leading-tight mb-2 group-hover:text-[#4aa87a] transition-colors line-clamp-2">
+                        {article.title}
+                      </h3>
+                      <p className="text-xs text-[#52625a] line-clamp-2 mb-4 leading-relaxed">
+                        {article.description}
+                      </p>
+                      <div className="mt-auto flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-[#4aa87a] uppercase">
+                          {article.source.name}
+                        </span>
+                        <ExternalLink className="h-3 w-3 text-[#e8ece9] group-hover:text-[#4aa87a]" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
               )}
             </section>
 
           </div>
         </div>
+        <NewsModal 
+          article={selectedArticle} 
+          onClose={() => setSelectedArticle(null)} 
+        />
       </AppShell>
     </AuthGate>
   );

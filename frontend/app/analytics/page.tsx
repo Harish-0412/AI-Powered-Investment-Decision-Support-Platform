@@ -233,7 +233,7 @@ export default function AnalyticsPage() {
               label="Total Profit/Loss"
               value={portfolioData ? `₹${portfolioData.totalProfitLoss.toLocaleString()}` : "—"}
               subValue={portfolioData ? `${portfolioData.totalProfitLossPercentage.toFixed(2)}%` : ""}
-              trend={portfolioData?.totalProfitLoss >= 0 ? "up" : "down"}
+              trend={(portfolioData?.totalProfitLoss ?? 0) >= 0 ? "up" : "down"}
             />
             <div className="workspace-panel compact">
               <label className="text-xs font-bold uppercase text-[#52625a] mb-2 block">Select Portfolio</label>
@@ -480,11 +480,11 @@ export default function AnalyticsPage() {
                   <h2>Signals</h2>
                 </div>
                 <div className="space-y-3">
-                  {indicators?.latest.rsi! > 70 && (
-                    <AlertItem type="warning" message={`${indicators?.symbol} is overbought (RSI: ${indicators?.latest.rsi.toFixed(1)})`} />
+                  {indicators && indicators.latest.rsi > 70 && (
+                    <AlertItem type="warning" message={`${indicators.symbol} is overbought (RSI: ${indicators.latest.rsi.toFixed(1)})`} />
                   )}
-                  {indicators?.latest.rsi! < 30 && (
-                    <AlertItem type="success" message={`${indicators?.symbol} is oversold (RSI: ${indicators?.latest.rsi.toFixed(1)})`} />
+                  {indicators && indicators.latest.rsi < 30 && (
+                    <AlertItem type="success" message={`${indicators.symbol} is oversold (RSI: ${indicators.latest.rsi.toFixed(1)})`} />
                   )}
                   {stockRisk?.riskLevel === "HIGH" && (
                     <AlertItem type="danger" message={`${stockRisk.symbol} shows high volatility (${(stockRisk.annualizedVolatility * 100).toFixed(0)}%)`} />

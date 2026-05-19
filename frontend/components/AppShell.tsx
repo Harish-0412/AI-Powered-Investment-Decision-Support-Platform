@@ -7,7 +7,6 @@ const navLinks = [
   { label: "Dashboard", href: "/app" },
   { label: "My Portfolio", href: "/portfolio/me" },
   { label: "Stocks", href: "/stocks" },
-  { label: "Portfolios", href: "/portfolios" },
   { label: "Analytics", href: "/analytics" },
   { label: "Dividend Tracker", href: "/dividend-tracker" },
   { label: "Sentiment Hub", href: "/sentiment-hub" },

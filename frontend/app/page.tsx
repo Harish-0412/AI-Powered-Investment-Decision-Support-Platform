@@ -4,7 +4,6 @@ const navItems = [
   { label: "Features", href: "#features" },
   { label: "App", href: "/app" },
   { label: "Stocks", href: "/stocks" },
-  { label: "Portfolios", href: "/portfolios" },
   { label: "Analytics", href: "/analytics" },
   { label: "Mutual Funds", href: "/mutual-funds" },
 ];
