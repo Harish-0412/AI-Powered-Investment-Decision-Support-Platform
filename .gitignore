@@ -31,3 +31,4 @@
 # nested git metadata backups
 **/.git/
 **/.git.bak
+.vercel
