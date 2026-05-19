@@ -1,5 +1,4 @@
 import { cacheGet, cacheSet } from "../lib/redis";
-import axios from "axios";
 
 const SENTIMENT_CACHE_TTL = 3600; // 1 hour
 

@@ -12,7 +12,8 @@ export const getTopNews = asyncHandler(async (req: Request, res: Response) => {
 export const getStockNews = asyncHandler(async (req: Request, res: Response) => {
   const query = (req.query.q as string);
   if (!query) {
-    return res.status(400).json({ message: "Search query 'q' is required" });
+    res.status(400).json({ message: "Search query 'q' is required" });
+    return;
   }
   const articles = await newsService.searchStockNews(query);
   res.json(articles);

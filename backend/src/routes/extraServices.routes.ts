@@ -7,6 +7,7 @@ export const extraRouter = Router();
 extraRouter.use(requireAuth);
 
 extraRouter.get("/dividends", controller.getDividends);
+extraRouter.get("/dividends/:symbol/analytics", controller.getDividendAnalytics);
 extraRouter.get("/tax-loss", controller.getTaxLossOpportunities);
 extraRouter.get("/sentiment/trending", controller.getTrendingMemes);
 extraRouter.get("/sentiment/:symbol", controller.getSentiment);

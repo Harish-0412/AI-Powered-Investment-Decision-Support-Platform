@@ -1,24 +1,38 @@
 services:
+  # Backend service
   - type: web
     name: investment-intelligence-backend
-    runtime: node
+    env: node
     plan: free
     rootDir: backend
-    buildCommand: npm install && npm run prisma:generate && npm run build
-    preDeployCommand: npm run prisma:deploy
-    startCommand: npm start
-    healthCheckPath: /api/v1/health
-    autoDeploy: true
+    buildCommand: npm ci && npm run build
+    startCommand: npm run prisma:deploy && npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
+        fromDatabase:
+          name: investment-intelligence-db
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
-      - key: FRONTEND_URL
+      - key: PORT
+        value: 5000
+      - key: UPSTASH_REDIS_REST_URL
         sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      - key: ALPHA_VANTAGE_API_KEY
+        sync: false
+      - key: NEWS_API_KEY
+        value: 984372f759f5467d8e8d6aae6c844e48
+      - key: FRONTEND_URL
+        sync: false # Should be set to the Vercel URL after frontend deployment
+
+databases:
+  - name: investment-intelligence-db
+    plan: free
+    databaseName: investment_intel
+    user: investment_user

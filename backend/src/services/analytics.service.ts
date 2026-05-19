@@ -13,6 +13,12 @@ const DEFAULT_RISK_FREE_RATE = 0.02;
 
 const toNumber = (value: { toString: () => string } | number) => Number(value.toString());
 
+const hasMacdValues = (
+  value: { MACD?: number; signal?: number } | null
+): value is { MACD: number; signal: number } => (
+  typeof value?.MACD === "number" && typeof value.signal === "number"
+);
+
 const getClosePrices = async (symbol: string, range = "1y") => {
   const history = await getHistoricalData(symbol, range) as HistoryPoint[];
   return history
@@ -133,7 +139,7 @@ export const getStockPredictions = async (symbol: string) => {
   const indicators = await getStockTechnicalIndicators(symbol, "6mo");
   const { latest, series } = indicators;
   
-  if (!latest.close || !latest.rsi || !latest.macd || !latest.ema) {
+  if (!latest.close || !latest.rsi || !hasMacdValues(latest.macd) || !latest.ema) {
     return null;
   }
 
@@ -179,7 +185,7 @@ export const getStockRecommendations = async (symbol: string) => {
   const indicators = await getStockTechnicalIndicators(symbol, "3mo");
   const { latest } = indicators;
 
-  if (!prediction || !latest.rsi || !latest.macd) {
+  if (!prediction || !latest.rsi || !hasMacdValues(latest.macd) || !latest.close || !latest.ema) {
     return null;
   }
 
@@ -196,8 +202,8 @@ export const getStockRecommendations = async (symbol: string) => {
   if (latest.rsi > 70) reasons.push("RSI is in overbought territory (> 70), suggesting a potential pullback.");
   if (latest.macd.MACD > latest.macd.signal) reasons.push("MACD bullish crossover detected (MACD line crossed above signal line).");
   if (latest.macd.MACD < latest.macd.signal) reasons.push("MACD bearish crossover detected (MACD line crossed below signal line).");
-  if (latest.close! > latest.ema!) reasons.push("Price is trending above the 20-day EMA, indicating short-term strength.");
-  if (latest.close! < latest.ema!) reasons.push("Price is trending below the 20-day EMA, indicating short-term weakness.");
+  if (latest.close > latest.ema) reasons.push("Price is trending above the 20-day EMA, indicating short-term strength.");
+  if (latest.close < latest.ema) reasons.push("Price is trending below the 20-day EMA, indicating short-term weakness.");
 
   return {
     symbol: symbol.toUpperCase(),
@@ -255,7 +261,7 @@ const getSectorForSymbol = (symbol: string): string => {
   const upperSymbol = symbol.toUpperCase();
   // Try to find exact match or match with .NS/.BO suffix
   for (const [sector, symbols] of Object.entries(SECTOR_MAP)) {
-    if (symbols.some(s => s.toUpperCase() === upperSymbol || s.toUpperCase().startsWith(upperSymbol + "."))) {
+    if (symbols.some((s) => s.toUpperCase() === upperSymbol || s.toUpperCase().startsWith(upperSymbol + "."))) {
       return sector;
     }
   }

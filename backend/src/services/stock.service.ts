@@ -72,7 +72,7 @@ const UNIVERSES: Record<string, string[]> = {
   "BSE": []
 };
 
-const SECTOR_MAP: Record<string, string[]> = {
+export const SECTOR_MAP: Record<string, string[]> = {
   "Information Technology": ["TCS.NS","INFY.NS","WIPRO.NS","HCLTECH.NS","TECHM.NS","MPHASIS.NS","LTTS.NS","COFORGE.NS","PERSISTENT.NS","KPITTECH.NS"],
   "Banking": ["HDFCBANK.NS","ICICIBANK.NS","KOTAKBANK.NS","AXISBANK.NS","SBIN.NS","INDUSINDBK.NS","BANDHANBNK.NS","FEDERALBNK.NS","IDFCFIRSTB.NS","PNB.NS","BANKBARODA.NS"],
   "Financial Services": ["BAJFINANCE.NS","BAJAJFINSV.NS","MUTHOOTFIN.NS","CHOLAFIN.NS","HDFCLIFE.NS","SBILIFE.NS","IIFL.NS","ANGELONE.NS","HDFCAMC.NS","NIPPONLIFE.NS"],
