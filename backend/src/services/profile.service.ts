@@ -1,6 +1,5 @@
 import type { Prisma } from "@prisma/client";
 import { getPrisma } from "../lib/prisma";
-import { getLocalPrisma } from "../lib/prisma-local";
 import { DEFAULT_APP_PROJECT, DEFAULT_SECTORS } from "../constants/default-portfolio";
 import type { OnboardingPayload, PublicProfile } from "../types/profile.types";
 
@@ -56,44 +55,6 @@ const toPublicProfile = (profile: {
   onboardingCompleted: profile.onboardingCompleted,
 });
 
-const syncToLocal = async (userId: string) => {
-  const local = getLocalPrisma();
-  if (!local) return;
-
-  try {
-    const primary = await getPrisma().userProfile.findUnique({ where: { userId } });
-    if (!primary) return;
-
-    const row = {
-      id: primary.id,
-      userId: primary.userId,
-      slug: primary.slug,
-      fullName: primary.fullName,
-      role: primary.role,
-      tagline: primary.tagline,
-      bio: primary.bio,
-      yearsLearning: primary.yearsLearning,
-      currentlyBuilding: primary.currentlyBuilding,
-      technologies: primary.technologies ?? undefined,
-      skills: primary.skills ?? undefined,
-      projects: primary.projects ?? undefined,
-      experience: primary.experience ?? undefined,
-      contactEmail: primary.contactEmail,
-      linkedin: primary.linkedin,
-      onboardingCompleted: primary.onboardingCompleted,
-      onboardingStep: primary.onboardingStep,
-    };
-
-    await local.userProfile.upsert({
-      where: { userId },
-      create: row,
-      update: row,
-    });
-  } catch (error) {
-    console.warn("[profile] Local DB sync skipped:", error instanceof Error ? error.message : error);
-  }
-};
-
 export const ensureProfileForUser = async (userId: string, email: string, name?: string | null) => {
   const existing = await getPrisma().userProfile.findUnique({ where: { userId } });
   if (existing) return existing;
@@ -110,7 +71,6 @@ export const ensureProfileForUser = async (userId: string, email: string, name?:
     },
   });
 
-  await syncToLocal(userId);
   return profile;
 };
 
@@ -172,7 +132,6 @@ export const updateOnboarding = async (userId: string, payload: OnboardingPayloa
     data,
   });
 
-  await syncToLocal(userId);
   return toPublicProfile(updated);
 };
 

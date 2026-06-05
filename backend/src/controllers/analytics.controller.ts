@@ -1,5 +1,7 @@
 import type { Request, Response } from "express";
 import * as analyticsService from "../services/analytics.service";
+import * as mlService from "../services/ml.service";
+import * as optimizerService from "../services/portfolio-optimizer.service";
 import { AppError } from "../utils/errors";
 
 const getParam = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
@@ -36,7 +38,9 @@ export const getStockIndicators = async (req: Request, res: Response) => {
       macdSlowPeriod: Number(getQueryString(req.query.macdSlowPeriod)) || undefined,
       macdSignalPeriod: Number(getQueryString(req.query.macdSignalPeriod)) || undefined,
       bbPeriod: Number(getQueryString(req.query.bbPeriod)) || undefined,
-      bbStdDev: Number(getQueryString(req.query.bbStdDev)) || undefined
+      bbStdDev: Number(getQueryString(req.query.bbStdDev)) || undefined,
+      atrPeriod: Number(getQueryString(req.query.atrPeriod)) || undefined,
+      adxPeriod: Number(getQueryString(req.query.adxPeriod)) || undefined
     }
   );
 
@@ -44,8 +48,7 @@ export const getStockIndicators = async (req: Request, res: Response) => {
 };
 
 export const getStockPredictions = async (req: Request, res: Response) => {
-  const result = await analyticsService.getStockPredictions(getRequiredSymbol(req));
-  if (!result) throw new AppError(404, "Predictions not available for this symbol");
+  const result = await mlService.getAIPrediction(getRequiredSymbol(req));
   res.json(result);
 };
 
@@ -82,5 +85,13 @@ export const getPortfolioAnalytics = async (req: Request, res: Response) => {
     throw new AppError(404, "Portfolio not found");
   }
 
+  res.json(result);
+};
+
+export const optimizePortfolio = async (req: Request, res: Response) => {
+  const portfolioId = getParam(req.params.id);
+  if (!portfolioId) throw new AppError(400, "Portfolio id is required");
+
+  const result = await optimizerService.optimizePortfolio(portfolioId, req.user!.id);
   res.json(result);
 };

@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
 import { env } from "../config/env";
 
 const globalForPrisma = globalThis as unknown as {
@@ -7,27 +6,20 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 const createPrismaClient = () => {
-  const adapter = new PrismaPg({ connectionString: env.DATABASE_URL });
-  const client = new PrismaClient({ adapter });
-
-  if (typeof client.userProfile?.findUnique !== "function") {
-    throw new Error(
-      "Prisma Client is missing UserProfile. Run `npm run prisma:generate` in backend, then restart the server."
-    );
-  }
+  const client = new PrismaClient({
+    datasources: {
+      db: {
+        url: env.DATABASE_URL,
+      },
+    },
+  });
 
   return client;
 };
 
 const getPrismaClient = (): PrismaClient => {
-  const cached = globalForPrisma.prisma;
-
-  if (cached && typeof cached.userProfile?.findUnique === "function") {
-    return cached;
-  }
-
-  if (cached) {
-    void cached.$disconnect();
+  if (globalForPrisma.prisma) {
+    return globalForPrisma.prisma;
   }
 
   const client = createPrismaClient();

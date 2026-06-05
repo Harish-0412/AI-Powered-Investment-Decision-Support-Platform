@@ -73,6 +73,7 @@ model Portfolio {
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   holdings    Holding[]
   transactions Transaction[]
+  metrics     PortfolioMetrics?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -107,6 +108,62 @@ model Transaction {
   @@index([portfolioId])
   @@index([symbol])
   @@index([date])
+}
+
+model StockAnalytics {
+  id              String   @id @default(uuid())
+  symbol          String   @unique
+  technicalData   Json     // Indicators, regimes, etc.
+  sentimentData   Json?
+  fundamentalData Json?
+  lastUpdated     DateTime @default(now())
+
+  @@index([symbol])
+}
+
+model PortfolioMetrics {
+  id              String    @id @default(uuid())
+  portfolioId     String    @unique
+  portfolio       Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  riskMetrics     Json      // VaR, CVaR, Sharpe, etc.
+  performanceData Json      // TWR, Rolling returns, etc.
+  optimizationData Json?    // Suggested rebalancing
+  lastUpdated     DateTime  @default(now())
+
+  @@index([portfolioId])
+}
+
+model PredictionScore {
+  id              String   @id @default(uuid())
+  symbol          String
+  timeframe       String   // e.g., "7d", "30d"
+  score           Float    // -1 to 1 (Bearish to Bullish)
+  confidence      Float
+  features        Json     // Factors contributing to score
+  createdAt       DateTime @default(now())
+
+  @@unique([symbol, timeframe])
+  @@index([symbol])
+}
+
+model SectorRisk {
+  id              String   @id @default(uuid())
+  sector          String   @unique
+  volatility      Float
+  correlation     Float    // Correlation with benchmark
+  riskLevel       String
+  lastUpdated     DateTime @default(now())
+}
+
+model SentimentScore {
+  id              String   @id @default(uuid())
+  symbol          String
+  source          String   // e.g., "news", "twitter"
+  score           Float    // -1 to 1
+  magnitude       Float
+  date            DateTime @default(now())
+
+  @@index([symbol, date])
 }
 
 model RefreshToken {

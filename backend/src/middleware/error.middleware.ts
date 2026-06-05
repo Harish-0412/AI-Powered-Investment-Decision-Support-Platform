@@ -8,6 +8,11 @@ export const notFoundHandler = () => {
 };
 
 export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
+  console.error("[ERROR]", error instanceof Error ? error.message : error);
+  if (error instanceof Error && error.stack) {
+    console.error("[STACK]", error.stack);
+  }
+
   if (error instanceof ZodError) {
     return res.status(400).json({
       message: "Validation failed",

@@ -18,28 +18,28 @@ import {
   SecondaryButton,
 } from "./AssessmentFields";
 
-const STEPS = ["Identity", "Application Usage", "Market Focus", "Investment History", "Contact"] as const;
+const STEPS = ["Profile", "Strategy", "Markets", "Portfolio", "Contact"] as const;
 
 const STEP_COPY: Record<number, { title: string; subtitle: string }> = {
   0: {
-    title: "Define your investor identity",
-    subtitle: "Lead with your primary investment goal and core philosophy.",
+    title: "Define your investor profile",
+    subtitle: "What are your primary goals and philosophy?",
   },
   1: {
-    title: "How will you use this platform?",
-    subtitle: "Explain your interest in market insights and your current focus areas.",
+    title: "Investment strategy",
+    subtitle: "Tell us about your experience and risk appetite.",
   },
   2: {
-    title: "Organize focus by market sectors",
-    subtitle: "Group your interests the way portfolio managers think — Equity, Fixed Income, Crypto, etc.",
+    title: "Market focus",
+    subtitle: "Which sectors and asset classes are you tracking?",
   },
   3: {
-    title: "Share your investment journey",
-    subtitle: "Past investments and methods help tailor your insights.",
+    title: "Set up your portfolio",
+    subtitle: "Create your first portfolio to start tracking.",
   },
   4: {
     title: "Stay connected",
-    subtitle: "Add your contact details for personalized updates and collaboration.",
+    subtitle: "Add your contact details for personalized updates.",
   },
 };
 
@@ -71,13 +71,11 @@ export function OnboardingWizard() {
   const [fullName, setFullName] = useState("");
   const [investmentGoal, setInvestmentGoal] = useState("");
   const [investmentPhilosophy, setInvestmentPhilosophy] = useState("");
-  const [appUsageInterest, setAppUsageInterest] = useState("");
   const [investmentExperienceYears, setInvestmentExperienceYears] = useState(1);
-  const [currentFocus, setCurrentFocus] = useState("");
-  const [stocksWatching, setStocksWatching] = useState("");
+  const [riskTolerance, setRiskTolerance] = useState("Moderate");
+  const [investmentStyle, setInvestmentStyle] = useState("Value");
   const [sectors, setSectors] = useState<MarketSectors>({});
-  const [pastInvestments, setPastInvestments] = useState<PastInvestment[]>([]);
-  const [investmentMethods, setInvestmentMethods] = useState<InvestmentMethod[]>([]);
+  const [portfolioName, setPortfolioName] = useState("My Main Portfolio");
   const [contactEmail, setContactEmail] = useState("");
   const [linkedin, setLinkedin] = useState("");
 
@@ -87,17 +85,14 @@ export function OnboardingWizard() {
         setFullName(profile.fullName ?? "");
         setInvestmentGoal(profile.investmentGoal ?? "");
         setInvestmentPhilosophy(profile.investmentPhilosophy ?? "");
-        setAppUsageInterest(profile.appUsageInterest ?? "");
         setInvestmentExperienceYears(profile.investmentExperienceYears ?? 1);
-        setCurrentFocus(profile.currentFocus ?? "");
-        setStocksWatching(joinTags(profile.stocksWatching ?? undefined));
+        setRiskTolerance(profile.currentFocus ?? "Moderate");
+        setInvestmentStyle(profile.appUsageInterest ?? "Value");
         setSectors(profile.sectors ?? {});
-        setPastInvestments(profile.pastInvestments?.length ? profile.pastInvestments : [emptyInvestment()]);
-        setInvestmentMethods(profile.investmentMethods ?? []);
         setContactEmail(profile.contactEmail ?? "");
         setLinkedin(profile.linkedin ?? "");
         if (profile.onboardingCompleted) {
-          window.location.href = `/portfolio/${profile.slug}`;
+          window.location.href = `/portfolio/me`;
         }
       })
       .catch((error) => setMessage(error instanceof Error ? error.message : "Failed to load profile"))
@@ -115,13 +110,10 @@ export function OnboardingWizard() {
           fullName,
           investmentGoal,
           investmentPhilosophy,
-          appUsageInterest,
           investmentExperienceYears,
-          currentFocus,
-          stocksWatching: parseTags(stocksWatching),
+          currentFocus: riskTolerance, // Mapping risk tolerance to currentFocus
+          appUsageInterest: investmentStyle, // Mapping investment style to appUsageInterest
           sectors,
-          pastInvestments,
-          investmentMethods,
           contactEmail,
           linkedin: linkedin || undefined,
           complete,
@@ -129,8 +121,20 @@ export function OnboardingWizard() {
       });
 
       if (complete) {
-        const path = await resolvePostAuthPath();
-        window.location.href = path;
+        // Create initial portfolio if it doesn't exist
+        try {
+          const portfolios = await apiRequest<any[]>("/portfolios");
+          if (portfolios.length === 0) {
+            await apiRequest("/portfolios", {
+              method: "POST",
+              body: JSON.stringify({ name: portfolioName }),
+            });
+          }
+        } catch (e) {
+          console.error("Failed to create initial portfolio", e);
+        }
+
+        window.location.href = "/portfolio/me";
         return;
       }
 
@@ -188,11 +192,13 @@ export function OnboardingWizard() {
         </label>
         <label>
           <FieldLabel>Primary investment goal</FieldLabel>
-          <FieldInput
-            value={investmentGoal}
-            onChange={(e) => setInvestmentGoal(e.target.value)}
-            placeholder="Wealth Creation / Retirement / Passive Income"
-          />
+          <FieldSelect value={investmentGoal} onChange={(e) => setInvestmentGoal(e.target.value)}>
+            <option value="">Select a goal</option>
+            <option value="Wealth Creation">Wealth Creation</option>
+            <option value="Retirement">Retirement</option>
+            <option value="Passive Income">Passive Income</option>
+            <option value="Short-term Gains">Short-term Gains</option>
+          </FieldSelect>
         </label>
         <label>
           <FieldLabel hint="One sentence about your approach">Investment philosophy</FieldLabel>
@@ -208,15 +214,6 @@ export function OnboardingWizard() {
     stepContent = (
       <FieldGroup>
         <label>
-          <FieldLabel>Application usage interest</FieldLabel>
-          <FieldTextarea
-            value={appUsageInterest}
-            onChange={(e) => setAppUsageInterest(e.target.value)}
-            rows={4}
-            placeholder="I want to use Investment Intelligence for tracking my portfolio risk and finding market insights…"
-          />
-        </label>
-        <label>
           <FieldLabel>Years of investment experience</FieldLabel>
           <FieldInput
             type="number"
@@ -226,21 +223,23 @@ export function OnboardingWizard() {
           />
         </label>
         <label>
-          <FieldLabel>Current investment focus</FieldLabel>
-          <FieldTextarea
-            value={currentFocus}
-            onChange={(e) => setCurrentFocus(e.target.value)}
-            rows={2}
-            placeholder="Focusing on blue-chip stocks and emerging technology sectors."
-          />
+          <FieldLabel>Risk tolerance</FieldLabel>
+          <FieldSelect value={riskTolerance} onChange={(e) => setRiskTolerance(e.target.value)}>
+            <option value="Conservative">Conservative (Capital preservation)</option>
+            <option value="Moderate">Moderate (Balanced growth)</option>
+            <option value="Aggressive">Aggressive (High growth)</option>
+            <option value="Very Aggressive">Very Aggressive (Speculative)</option>
+          </FieldSelect>
         </label>
         <label>
-          <FieldLabel hint="Comma-separated tickers">Stocks you are watching</FieldLabel>
-          <FieldInput
-            value={stocksWatching}
-            onChange={(e) => setStocksWatching(e.target.value)}
-            placeholder="AAPL, MSFT, GOOGL, RELIANCE"
-          />
+          <FieldLabel>Investment style</FieldLabel>
+          <FieldSelect value={investmentStyle} onChange={(e) => setInvestmentStyle(e.target.value)}>
+            <option value="Value">Value Investing</option>
+            <option value="Growth">Growth Investing</option>
+            <option value="Dividend">Dividend / Income</option>
+            <option value="Index">Index / Passive</option>
+            <option value="Momentum">Momentum / Trading</option>
+          </FieldSelect>
         </label>
       </FieldGroup>
     );
@@ -248,200 +247,52 @@ export function OnboardingWizard() {
     stepContent = (
       <div className="space-y-3 max-h-[min(420px,50vh)] overflow-y-auto pr-1">
         {Object.entries(SECTOR_LABELS).map(([key, label]) => (
-          <FieldGroup key={key} className="!p-4">
-            <label>
-              <FieldLabel>{label}</FieldLabel>
-              <FieldInput
-                value={joinTags(sectors[key as keyof MarketSectors])}
-                onChange={(e) => updateSectorDomain(key as keyof MarketSectors, e.target.value)}
-                placeholder="Technology, Healthcare, Finance"
-              />
-            </label>
+          <FieldGroup key={key}>
+            <FieldLabel hint={`Comma-separated tickers for ${label}`}>{label}</FieldLabel>
+            <FieldInput
+              value={joinTags(sectors[key as keyof MarketSectors])}
+              onChange={(e) => updateSectorDomain(key as keyof MarketSectors, e.target.value)}
+              placeholder="AAPL, MSFT, GOOGL..."
+            />
           </FieldGroup>
         ))}
       </div>
     );
   } else if (step === 3) {
     stepContent = (
-      <div className="space-y-4 max-h-[min(480px,55vh)] overflow-y-auto pr-1">
-        <h3 className="text-sm font-semibold text-[#101412] px-1">Past investments</h3>
-        {pastInvestments.map((investment, index) => (
-          <FieldGroup key={investment.id}>
-            <label>
-              <FieldLabel>Investment name</FieldLabel>
-              <FieldInput
-                value={investment.name}
-                onChange={(e) => {
-                  const next = [...pastInvestments];
-                  next[index] = { ...investment, name: e.target.value };
-                  setPastInvestments(next);
-                }}
-              />
-            </label>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <label>
-                <FieldLabel>Asset class</FieldLabel>
-                <FieldInput
-                  value={investment.assetClass}
-                  onChange={(e) => {
-                    const next = [...pastInvestments];
-                    next[index] = { ...investment, assetClass: e.target.value };
-                    setPastInvestments(next);
-                  }}
-                  placeholder="Equity / Mutual Fund"
-                />
-              </label>
-              <label>
-                <FieldLabel>Duration</FieldLabel>
-                <FieldInput
-                  value={investment.duration}
-                  onChange={(e) => {
-                    const next = [...pastInvestments];
-                    next[index] = { ...investment, duration: e.target.value };
-                    setPastInvestments(next);
-                  }}
-                  placeholder="2 years"
-                />
-              </label>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <label>
-                <FieldLabel>Entry price</FieldLabel>
-                <FieldInput
-                  value={investment.entryPrice}
-                  onChange={(e) => {
-                    const next = [...pastInvestments];
-                    next[index] = { ...investment, entryPrice: e.target.value };
-                    setPastInvestments(next);
-                  }}
-                />
-              </label>
-              <label>
-                <FieldLabel>Exit price (if applicable)</FieldLabel>
-                <FieldInput
-                  value={investment.exitPrice ?? ""}
-                  onChange={(e) => {
-                    const next = [...pastInvestments];
-                    next[index] = { ...investment, exitPrice: e.target.value };
-                    setPastInvestments(next);
-                  }}
-                />
-              </label>
-            </div>
-            <label>
-              <FieldLabel>Key takeaway</FieldLabel>
-              <FieldTextarea
-                value={investment.keyTakeaway}
-                onChange={(e) => {
-                  const next = [...pastInvestments];
-                  next[index] = { ...investment, keyTakeaway: e.target.value };
-                  setPastInvestments(next);
-                }}
-                rows={2}
-              />
-            </label>
-          </FieldGroup>
-        ))}
-        <SecondaryButton type="button" onClick={() => setPastInvestments((p) => [...p, emptyInvestment()])} className="w-full">
-          <Plus className="h-4 w-4 mr-2" />
-          Add another investment
-        </SecondaryButton>
-
-        <hr className="my-6 border-[#1014121a]" />
-        
-        <h3 className="text-sm font-semibold text-[#101412] px-1">Investment methods</h3>
-        {investmentMethods.map((item, index) => (
-          <FieldGroup key={item.id}>
-            <label>
-              <FieldLabel>Title</FieldLabel>
-              <FieldInput
-                value={item.title}
-                onChange={(e) => {
-                  const next = [...investmentMethods];
-                  next[index] = { ...item, title: e.target.value };
-                  setInvestmentMethods(next);
-                }}
-                placeholder="Monthly SIP in Index Funds"
-              />
-            </label>
-            <div className="grid sm:grid-cols-2 gap-3">
-              <label>
-                <FieldLabel>Platform / Broker</FieldLabel>
-                <FieldInput
-                  value={item.platform}
-                  onChange={(e) => {
-                    const next = [...investmentMethods];
-                    next[index] = { ...item, platform: e.target.value };
-                    setInvestmentMethods(next);
-                  }}
-                  placeholder="Zerodha / Groww / Vanguard"
-                />
-              </label>
-              <label>
-                <FieldLabel>Period</FieldLabel>
-                <FieldInput
-                  value={item.period}
-                  onChange={(e) => {
-                    const next = [...investmentMethods];
-                    next[index] = { ...item, period: e.target.value };
-                    setInvestmentMethods(next);
-                  }}
-                  placeholder="2022 – Present"
-                />
-              </label>
-            </div>
-            <label>
-              <FieldLabel>Type</FieldLabel>
-              <FieldSelect
-                value={item.type}
-                onChange={(e) => {
-                  const next = [...investmentMethods];
-                  next[index] = { ...item, type: e.target.value as InvestmentMethod["type"] };
-                  setInvestmentMethods(next);
-                }}
-              >
-                <option value="sip">SIP (Systematic Investment Plan)</option>
-                <option value="lumpsum">Lumpsum</option>
-                <option value="trading">Active Trading</option>
-                <option value="index">Index Investing</option>
-                <option value="other">Other</option>
-              </FieldSelect>
-            </label>
-            <label>
-              <FieldLabel>Description</FieldLabel>
-              <FieldTextarea
-                value={item.description}
-                onChange={(e) => {
-                  const next = [...investmentMethods];
-                  next[index] = { ...item, description: e.target.value };
-                  setInvestmentMethods(next);
-                }}
-                rows={3}
-              />
-            </label>
-          </FieldGroup>
-        ))}
-        <SecondaryButton type="button" onClick={() => setInvestmentMethods((e) => [...e, emptyMethod()])} className="w-full">
-          <Plus className="h-4 w-4 mr-2" />
-          Add investment method
-        </SecondaryButton>
-      </div>
+      <FieldGroup>
+        <label>
+          <FieldLabel>Portfolio Name</FieldLabel>
+          <FieldInput
+            value={portfolioName}
+            onChange={(e) => setPortfolioName(e.target.value)}
+            placeholder="e.g., My Main Portfolio"
+          />
+        </label>
+        <p className="text-xs text-[#52625a] mt-2">
+          You can add stocks and transactions to this portfolio after completing the onboarding.
+        </p>
+      </FieldGroup>
     );
   } else if (step === 4) {
     stepContent = (
       <FieldGroup>
         <label>
-          <FieldLabel>Contact email</FieldLabel>
+          <FieldLabel>Contact Email</FieldLabel>
           <FieldInput
             type="email"
             value={contactEmail}
             onChange={(e) => setContactEmail(e.target.value)}
-            placeholder="you@example.com"
+            placeholder="hello@example.com"
           />
         </label>
         <label>
           <FieldLabel>LinkedIn (optional)</FieldLabel>
-          <FieldInput value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/…" />
+          <FieldInput
+            value={linkedin}
+            onChange={(e) => setLinkedin(e.target.value)}
+            placeholder="https://linkedin.com/in/username"
+          />
         </label>
       </FieldGroup>
     );

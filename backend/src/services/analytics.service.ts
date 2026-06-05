@@ -1,10 +1,13 @@
-import { bollingerbands, ema, macd, rsi, sma } from "technicalindicators";
+import { bollingerbands, ema, macd, rsi, sma, adx, obv, mfi, atr } from "technicalindicators";
 import { prisma } from "../lib/prisma";
 import { getHistoricalData, getStockQuote, SECTOR_MAP } from "./stock.service";
 
 type HistoryPoint = {
   date: string;
   close: number | null;
+  high: number | null;
+  low: number | null;
+  open: number | null;
   volume?: number | null;
 };
 
@@ -19,12 +22,21 @@ const hasMacdValues = (
   typeof value?.MACD === "number" && typeof value.signal === "number"
 );
 
-const getClosePrices = async (symbol: string, range = "1y") => {
+const getOhlcvData = async (symbol: string, range = "1y") => {
   const history = await getHistoricalData(symbol, range) as HistoryPoint[];
   return history
-    .filter((point) => typeof point.close === "number" && Number.isFinite(point.close))
+    .filter((point) => 
+      typeof point.close === "number" && 
+      typeof point.high === "number" && 
+      typeof point.low === "number" &&
+      typeof point.open === "number" &&
+      Number.isFinite(point.close)
+    )
     .map((point) => ({
       date: point.date,
+      open: point.open as number,
+      high: point.high as number,
+      low: point.low as number,
       close: point.close as number,
       volume: point.volume ?? 0
     }));
@@ -44,7 +56,7 @@ const dailyReturns = (prices: number[]) => {
   return returns;
 };
 
-const average = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
+const average = (values: number[]) => values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 
 const standardDeviation = (values: number[]) => {
   if (values.length < 2) return 0;
@@ -52,6 +64,34 @@ const standardDeviation = (values: number[]) => {
   const mean = average(values);
   const variance = values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / (values.length - 1);
   return Math.sqrt(variance);
+};
+
+// Calculate Value at Risk (VaR) using historical simulation method
+const calculateVaR = (returns: number[], confidence = 0.95) => {
+  if (returns.length < 10) return 0;
+  const sortedReturns = [...returns].sort((a, b) => a - b);
+  const index = Math.floor((1 - confidence) * sortedReturns.length);
+  return -sortedReturns[index]; // Return as positive value representing loss
+};
+
+// Calculate Conditional Value at Risk (CVaR)
+const calculateCVaR = (returns: number[], confidence = 0.95) => {
+  if (returns.length < 10) return 0;
+  const sortedReturns = [...returns].sort((a, b) => a - b);
+  const index = Math.floor((1 - confidence) * sortedReturns.length);
+  const tailReturns = sortedReturns.slice(0, index + 1);
+  return -average(tailReturns);
+};
+
+// Calculate VWAP
+const calculateVWAP = (data: { close: number, volume: number }[]) => {
+  let cumulativeValue = 0;
+  let cumulativeVolume = 0;
+  return data.map(d => {
+    cumulativeValue += d.close * d.volume;
+    cumulativeVolume += d.volume;
+    return cumulativeVolume > 0 ? cumulativeValue / cumulativeVolume : d.close;
+  });
 };
 
 export const getStockTechnicalIndicators = async (
@@ -66,10 +106,15 @@ export const getStockTechnicalIndicators = async (
     macdSignalPeriod?: number;
     bbPeriod?: number;
     bbStdDev?: number;
+    atrPeriod?: number;
+    adxPeriod?: number;
   } = {}
 ) => {
-  const points = await getClosePrices(symbol, range);
+  const points = await getOhlcvData(symbol, range);
   const closePrices = points.map((point) => point.close);
+  const highPrices = points.map((point) => point.high);
+  const lowPrices = points.map((point) => point.low);
+  const volumes = points.map((point) => point.volume);
 
   const smaPeriod = options.smaPeriod || 20;
   const emaPeriod = options.emaPeriod || 20;
@@ -79,6 +124,8 @@ export const getStockTechnicalIndicators = async (
   const macdSignalPeriod = options.macdSignalPeriod || 9;
   const bbPeriod = options.bbPeriod || 20;
   const bbStdDev = options.bbStdDev || 2;
+  const atrPeriod = options.atrPeriod || 14;
+  const adxPeriod = options.adxPeriod || 14;
 
   const smaValues = sma({ period: smaPeriod, values: closePrices });
   const emaValues = ema({ period: emaPeriod, values: closePrices });
@@ -96,24 +143,67 @@ export const getStockTechnicalIndicators = async (
     stdDev: bbStdDev,
     values: closePrices
   });
+  
+  const adxValues = adx({
+    high: highPrices,
+    low: lowPrices,
+    close: closePrices,
+    period: adxPeriod
+  });
+
+  const obvValues = obv({
+    close: closePrices,
+    volume: volumes
+  });
+
+  const mfiValues = mfi({
+    high: highPrices,
+    low: lowPrices,
+    close: closePrices,
+    volume: volumes,
+    period: 14
+  });
+
+  const atrValues = atr({
+    high: highPrices,
+    low: lowPrices,
+    close: closePrices,
+    period: atrPeriod
+  });
+
+  const vwapValues = calculateVWAP(points);
+
+  // Momentum over different horizons
+  const getMomentum = (period: number) => {
+    if (closePrices.length <= period) return 0;
+    const current = closePrices[closePrices.length - 1];
+    const past = closePrices[closePrices.length - 1 - period];
+    return ((current - past) / past) * 100;
+  };
+
+  const momentum = {
+    "5d": getMomentum(5),
+    "20d": getMomentum(20),
+    "60d": getMomentum(60),
+    "120d": getMomentum(120)
+  };
+
+  // Regime Detection
+  const latestAdx = adxValues.at(-1)?.adx || 0;
+  const latestAtr = atrValues.at(-1) || 0;
+  const avgAtr = average(atrValues.slice(-20));
+  
+  let trendRegime = "Sideways";
+  if (latestAdx > 25) trendRegime = "Trending";
+  else if (latestAdx < 20) trendRegime = "Mean-Reverting";
+
+  let volRegime = "Normal";
+  if (latestAtr > avgAtr * 1.5) volRegime = "High Volatility";
+  else if (latestAtr < avgAtr * 0.7) volRegime = "Low Volatility";
 
   return {
     symbol: symbol.toUpperCase(),
     range,
-    periods: {
-      sma: smaPeriod,
-      ema: emaPeriod,
-      rsi: rsiPeriod,
-      macd: {
-        fast: macdFastPeriod,
-        slow: macdSlowPeriod,
-        signal: macdSignalPeriod
-      },
-      bb: {
-        period: bbPeriod,
-        stdDev: bbStdDev
-      }
-    },
     latest: {
       close: closePrices.at(-1) ?? null,
       volume: points.at(-1)?.volume ?? null,
@@ -121,7 +211,17 @@ export const getStockTechnicalIndicators = async (
       ema: emaValues.at(-1) ?? null,
       rsi: rsiValues.at(-1) ?? null,
       macd: macdValues.at(-1) ?? null,
-      bb: bbValues.at(-1) ?? null
+      bb: bbValues.at(-1) ?? null,
+      adx: adxValues.at(-1) ?? null,
+      obv: obvValues.at(-1) ?? null,
+      mfi: mfiValues.at(-1) ?? null,
+      vwap: vwapValues.at(-1) ?? null,
+      atr: latestAtr
+    },
+    momentum,
+    regimes: {
+      trend: trendRegime,
+      volatility: volRegime
     },
     series: {
       dates: points.map(p => p.date),
@@ -130,7 +230,9 @@ export const getStockTechnicalIndicators = async (
       ema: emaValues,
       rsi: rsiValues,
       macd: macdValues,
-      bb: bbValues
+      bb: bbValues,
+      adx: adxValues,
+      vwap: vwapValues
     }
   };
 };
@@ -291,6 +393,9 @@ export const getPortfolioAnalytics = async (
       const totalCost = averageBuyPrice * quantity;
       const profitLoss = currentValue - totalCost;
       const profitLossPercent = totalCost > 0 ? (profitLoss / totalCost) * 100 : 0;
+      
+      const history = await getOhlcvData(holding.symbol, range);
+      const returns = dailyReturns(history.map(p => p.close));
 
       return {
         symbol: holding.symbol,
@@ -304,7 +409,9 @@ export const getPortfolioAnalytics = async (
         annualizedVolatility: risk.annualizedVolatility,
         sharpeRatio: risk.sharpeRatio,
         annualizedReturn: risk.annualizedReturn,
-        sector: getSectorForSymbol(holding.symbol)
+        sector: getSectorForSymbol(holding.symbol),
+        returns, // Daily returns for VaR/CVaR calculation
+        beta: 1.2, // Placeholder for beta vs benchmark
       };
     })
   );
@@ -319,39 +426,68 @@ export const getPortfolioAnalytics = async (
     weight: totalValue > 0 ? holding.currentValue / totalValue : 0
   }));
 
+  // Portfolio daily returns (weighted sum of holding returns)
+  // Note: This is an approximation assuming static weights over the period
+  const maxHistoryLen = Math.max(...holdings.map(h => h.returns.length));
+  const portfolioReturns: number[] = [];
+  for (let i = 0; i < maxHistoryLen; i++) {
+    let dayReturn = 0;
+    holdings.forEach(h => {
+      const r = h.returns[h.returns.length - 1 - i] || 0;
+      dayReturn += r * h.weight;
+    });
+    portfolioReturns.push(dayReturn);
+  }
+
+  // Risk Metrics
+  const var95 = calculateVaR(portfolioReturns, 0.95);
+  const cvar95 = calculateCVaR(portfolioReturns, 0.95);
+  const vol = standardDeviation(portfolioReturns) * Math.sqrt(TRADING_DAYS_PER_YEAR);
+  
+  // Max Drawdown
+  let maxDD = 0;
+  let peak = 1;
+  let currentVal = 1;
+  [...portfolioReturns].reverse().forEach(r => {
+    currentVal *= (1 + r);
+    if (currentVal > peak) peak = currentVal;
+    const dd = (peak - currentVal) / peak;
+    if (dd > maxDD) maxDD = dd;
+  });
+
   // Sector Diversification
   const sectorWeights: Record<string, number> = {};
   holdings.forEach(h => {
     sectorWeights[h.sector] = (sectorWeights[h.sector] || 0) + h.weight;
   });
 
-  const weightedAnnualizedVolatility = holdings.reduce(
-    (sum, holding) => sum + holding.weight * holding.annualizedVolatility,
-    0
-  );
-  const weightedAnnualizedReturn = holdings.reduce(
-    (sum, holding) => sum + holding.weight * holding.annualizedReturn,
-    0
-  );
-  const weightedSharpeRatio = weightedAnnualizedVolatility > 0
-    ? (weightedAnnualizedReturn - riskFreeRate) / weightedAnnualizedVolatility
-    : 0;
+  // Stress Analysis Simulations
+  const stressScenarios = [
+    { name: "Market Correction", drop: -0.10, impact: totalValue * -0.10 * 1.1 }, // Assuming 1.1 beta
+    { name: "Bear Market", drop: -0.20, impact: totalValue * -0.20 * 1.2 },
+    { name: "Sector Crash (Tech)", drop: -0.30, impact: (sectorWeights["Information Technology"] || 0) * totalValue * -0.30 }
+  ];
 
   return {
     portfolioId,
     name: portfolio.name,
     range,
-    totalValue,
-    totalCost,
-    totalProfitLoss,
-    totalProfitLossPercentage,
-    riskFreeRate,
-    metrics: {
-      weightedAnnualizedVolatility,
-      weightedAnnualizedReturn,
-      weightedSharpeRatio
+    summary: {
+      totalValue,
+      totalCost,
+      totalProfitLoss,
+      totalProfitLossPercentage,
+    },
+    riskMetrics: {
+      volatility: vol,
+      sharpeRatio: vol > 0 ? (average(portfolioReturns) * TRADING_DAYS_PER_YEAR - riskFreeRate) / vol : 0,
+      var95,
+      cvar95,
+      maxDrawdown: maxDD,
+      diversificationScore: Math.min(100, (1 - Object.values(sectorWeights).reduce((sum, w) => sum + w*w, 0)) * 100 / (1 - 1/5) * 1.2) // Herfindahl-based
     },
     sectorDiversification: Object.entries(sectorWeights).map(([name, weight]) => ({ name, weight })),
-    holdings: holdings.sort((a, b) => b.profitLossPercent - a.profitLossPercent)
+    stressAnalysis: stressScenarios,
+    holdings: holdings.sort((a, b) => b.profitLossPercent - a.profitLossPercent).map(({ returns, ...h }) => h)
   };
 };

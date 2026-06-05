@@ -12,6 +12,7 @@
 # backend generated
 /backend/dist
 /backend/src/generated/prisma
+/backend/dev.db
 
 # frontend generated
 /frontend/.next
