@@ -11,7 +11,7 @@
 ╚═╝╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚══════╝   ╚═╝   ╚═╝ ╚══▀▀═╝
 ```
 
-# Investment Intelligence Platform
+# Investment Intelligence Platform !!
 
 **A production-grade, full-stack investment portfolio management and market intelligence system**
 
