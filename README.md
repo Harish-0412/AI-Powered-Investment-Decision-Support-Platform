@@ -58,6 +58,7 @@
 
 ---
 
+
 ## Executive Summary
 
 The **Investment Intelligence Platform** (InvestIQ) is a comprehensive, production-ready financial technology application designed to consolidate portfolio management, real-time market data, and AI-assisted investment insights into a single unified platform.
